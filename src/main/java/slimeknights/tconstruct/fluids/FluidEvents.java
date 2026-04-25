@@ -1,23 +1,25 @@
 package slimeknights.tconstruct.fluids;
 
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.event.furnace.FurnaceFuelBurnTimeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.fml.common.EventBusSubscriber;
 import slimeknights.tconstruct.TConstruct;
+import slimeknights.tconstruct.fluids.item.PotionBucketItem;
 import slimeknights.tconstruct.fluids.util.ConstantFluidContainerWrapper;
+import slimeknights.tconstruct.library.recipe.FluidValues;
+import slimeknights.tconstruct.shared.block.SlimeType;
 
 /**
  * Event subscriber for modifier events
  * Note the way the subscribers are set up, technically works on anything that has the tic_modifiers tag
  */
 @SuppressWarnings("unused")
-@EventBusSubscriber(modid = TConstruct.MOD_ID, bus = Bus.FORGE)
+@EventBusSubscriber(modid = TConstruct.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class FluidEvents {
   @SubscribeEvent
   static void onFurnaceFuel(FurnaceFuelBurnTimeEvent event) {
@@ -27,13 +29,37 @@ public class FluidEvents {
     }
   }
 
-  @SubscribeEvent
-  static void attachCapabilities(AttachCapabilitiesEvent<ItemStack> event) {
-    ItemStack stack = event.getObject();
-    if (event.getObject().is(Items.POWDER_SNOW_BUCKET)) {
-      event.addCapability(
-        TConstruct.getResource("powdered_snow"),
-        new ConstantFluidContainerWrapper(new FluidStack(TinkerFluids.powderedSnow.get(), FluidType.BUCKET_VOLUME), stack, Items.BUCKET.getDefaultInstance()));
+  @EventBusSubscriber(modid = TConstruct.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+  public static class ModCapabilities {
+    @SubscribeEvent
+    static void registerCapabilities(RegisterCapabilitiesEvent event) {
+      event.registerItem(
+        Capabilities.FluidHandler.ITEM,
+        (stack, context) -> new ConstantFluidContainerWrapper(new FluidStack(TinkerFluids.powderedSnow.get(), FluidType.BUCKET_VOLUME), stack, Items.BUCKET.getDefaultInstance()),
+        Items.POWDER_SNOW_BUCKET);
+
+      event.registerItem(
+        Capabilities.FluidHandler.ITEM,
+        (stack, context) -> new ConstantFluidContainerWrapper(new FluidStack(TinkerFluids.venom.get(), FluidValues.BOTTLE), stack),
+        TinkerFluids.venomBottle.get());
+
+      event.registerItem(
+        Capabilities.FluidHandler.ITEM,
+        (stack, context) -> new ConstantFluidContainerWrapper(new FluidStack(TinkerFluids.magma.get(), FluidValues.BOTTLE), stack),
+        TinkerFluids.magmaBottle.get());
+
+      for (SlimeType type : SlimeType.values()) {
+        event.registerItem(
+          Capabilities.FluidHandler.ITEM,
+          (stack, context) -> new ConstantFluidContainerWrapper(new FluidStack(TinkerFluids.slime.get(type), FluidValues.BOTTLE), stack),
+          TinkerFluids.slimeBottle.get(type));
+      }
+
+      event.registerItem(
+        Capabilities.FluidHandler.ITEM,
+        (stack, context) -> new PotionBucketItem.PotionBucketWrapper(stack),
+        TinkerFluids.potion.asItem());
     }
   }
+
 }

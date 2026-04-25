@@ -5,6 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import slimeknights.mantle.data.loadable.record.SingletonLoader;
@@ -58,8 +59,8 @@ public enum InventorySlotMenuModule implements ModifierModule, SlotStackModifier
 
   /** Checks if the given menu supports opening the menu */
   public static boolean isValidContainer(AbstractContainerMenu menu) {
-    // player inventory has a null type, which throws when used through the getter
-    if (menu.menuType == null) {
+    // player inventory menu is always valid
+    if (menu instanceof InventoryMenu) {
       return true;
     }
     // because vanilla set the throw precedent, add protection for other cases, just in case

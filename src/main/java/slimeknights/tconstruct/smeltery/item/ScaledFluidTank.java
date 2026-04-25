@@ -1,8 +1,11 @@
 package slimeknights.tconstruct.smeltery.item;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.minecraft.nbt.Tag;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 import javax.annotation.Nonnull;
 
@@ -11,6 +14,7 @@ import javax.annotation.Nonnull;
  * Internally works the same as a fluid tank with {@code capacity * scale}, except operations are truncated to the nearest scale (e.g. if scale is 4, we must fill in 4mb increments).
  */
 public class ScaledFluidTank extends FluidTank {
+  private static final RegistryAccess REGISTRY_ACCESS = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
   private final int scale;
   private ScaledFluidTank(int capacity, int scale) {
     super(capacity * scale);
@@ -83,21 +87,30 @@ public class ScaledFluidTank extends FluidTank {
 
   /* NBT */
 
-  @Override
-  public FluidTank readFromNBT(CompoundTag nbt) {
+  public FluidTank readFromNBT(RegistryAccess provider, CompoundTag nbt) {
     // scale the fluid on reading from NBT; as each instance should store the fluid relative to stack size 1
-    FluidStack fluid = FluidStack.loadFluidStackFromNBT(nbt);
+    FluidStack fluid = FluidStack.parseOptional(provider, nbt);
     fluid.setAmount(fluid.getAmount() * scale);
     setFluid(fluid);
     return this;
   }
 
-  @Override
-  public CompoundTag writeToNBT(CompoundTag nbt) {
+  public CompoundTag writeToNBT(RegistryAccess provider, CompoundTag nbt) {
     // scale the fluid on reading from NBT; as each instance should store the fluid relative to stack size 1
     FluidStack fluid = this.fluid.copy();
     fluid.setAmount(fluid.getAmount() / scale);
-    fluid.writeToNBT(nbt);
+    Tag tag = fluid.saveOptional(provider);
+    if (tag instanceof CompoundTag fluidTag) {
+      nbt.merge(fluidTag);
+    }
     return nbt;
+  }
+
+  public FluidTank readFromNBT(CompoundTag nbt) {
+    return readFromNBT(REGISTRY_ACCESS, nbt);
+  }
+
+  public CompoundTag writeToNBT(CompoundTag nbt) {
+    return writeToNBT(REGISTRY_ACCESS, nbt);
   }
 }

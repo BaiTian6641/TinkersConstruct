@@ -9,7 +9,6 @@ import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import slimeknights.mantle.client.model.util.MantleItemLayerModel;
@@ -46,8 +45,8 @@ public record BannerModifierModel(@Nullable ResourceLocation smallPrefix, @Nulla
   public void validate(Function<Material, TextureAtlasSprite> spriteGetter) {
     // since these are dynamically loaded, condition based on the config option
     if (Config.CLIENT.logMissingModifierTextures.get()) {
-      for (ResourceKey<BannerPattern> key : Sheets.SHIELD_MATERIALS.keySet()) {
-        String suffix = MaterialRenderInfo.getSuffix(key.location());
+      for (ResourceLocation patternId : BannerModule.getKnownPatternIds()) {
+        String suffix = MaterialRenderInfo.getSuffix(patternId);
         if (smallPrefix != null) {
           spriteGetter.apply(ModifierModel.blockAtlas(smallPrefix.withSuffix(suffix)));
         }
@@ -74,21 +73,16 @@ public record BannerModifierModel(@Nullable ResourceLocation smallPrefix, @Nulla
         List<BakedQuad> quads = new ArrayList<>(list.size());
         // iterate all patterns
         for (int i = 0; i < list.size(); i++) {
-          // patterns are stored as short strings for some reason, for consistency we also store as hashes
-          // map that back to the pattern
+          // patterns are stored as registry IDs so we can survive the removed hash-name API
           CompoundTag tag = list.getCompound(i);
-          Holder<BannerPattern> pattern = BannerPattern.byHash(tag.getString(BannerModule.KEY_PATTERN));
+          Holder<BannerPattern> pattern = BannerModule.getPattern(tag.getString(BannerModule.KEY_PATTERN));
           int color = tag.getInt(BannerModule.KEY_COLOR);
           if (pattern != null) {
-            // why must holders be such a pain?
-            // TODO 1.21: will need to switch from using the ID to using the asset root for the texture
-            pattern.unwrapKey().ifPresent(id -> {
-              TextureAtlasSprite sprite = spriteGetter.apply(ModifierModel.blockAtlas(prefix.withSuffix(MaterialRenderInfo.getSuffix(id.location()))));
-              // skip if sprite is missing - deals with modded patterns that we haven't made textures for
-              if (!MissingTextureAtlasSprite.getLocation().equals(sprite.contents().name())) {
-                quads.add(MantleItemLayerModel.getQuadForGui(color, -1, sprite, transforms, 0));
-              }
-            });
+            TextureAtlasSprite sprite = spriteGetter.apply(ModifierModel.blockAtlas(prefix.withSuffix(MaterialRenderInfo.getSuffix(pattern.value().assetId()))));
+            // skip if sprite is missing - deals with modded patterns that we haven't made textures for
+            if (!MissingTextureAtlasSprite.getLocation().equals(sprite.contents().name())) {
+              quads.add(MantleItemLayerModel.getQuadForGui(color, -1, sprite, transforms, 0));
+            }
           }
         }
         if (!quads.isEmpty()) {

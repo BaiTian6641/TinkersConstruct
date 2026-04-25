@@ -1,10 +1,10 @@
 package slimeknights.tconstruct.world;
 
-import com.google.common.collect.ImmutableSet;
-import net.minecraft.core.BlockSource;
+import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.Direction;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.dispenser.OptionalDispenseItemBehavior;
+import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataGenerator;
@@ -12,13 +12,11 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters;
 import net.minecraft.world.item.CreativeModeTab.Output;
-import net.minecraft.world.item.FireworkRocketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
@@ -45,16 +43,15 @@ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraftforge.common.PlantType;
-import net.minecraftforge.common.world.BiomeModifier;
-import net.minecraftforge.data.event.GatherDataEvent;
-import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
-import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
-import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent.Operation;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.common.world.BiomeModifier;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import slimeknights.mantle.registration.object.EntityObject;
 import slimeknights.mantle.registration.object.EnumObject;
 import slimeknights.mantle.registration.object.ItemObject;
@@ -105,9 +102,12 @@ import slimeknights.tconstruct.world.item.SlimeGrassSeedItem;
 import slimeknights.tconstruct.world.worldgen.trees.SlimeTree;
 
 import java.util.EnumMap;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.lang.reflect.Field;
 
 /**
  * Contains blocks and items relevant to structures and world gen
@@ -118,10 +118,8 @@ public final class TinkerWorld extends TinkerModule {
     MobEquipmentManager.init();
   }
 
-  public static final PlantType SLIME_PLANT_TYPE = PlantType.get("slime");
-
   /** Creative tab for anything that is naturally found in the world */
-  public static final RegistryObject<CreativeModeTab> tabWorld = CREATIVE_TABS.register(
+  public static final DeferredHolder<CreativeModeTab, CreativeModeTab> tabWorld = CREATIVE_TABS.register(
     "world", () -> CreativeModeTab.builder().title(TConstruct.makeTranslation("itemGroup", "world"))
                                   .icon(() -> new ItemStack(TinkerWorld.cobaltOre))
                                   .displayItems(TinkerWorld::addTabItems)
@@ -206,7 +204,7 @@ public final class TinkerWorld extends TinkerModule {
   public static final WoodBlockObject skyroot     = BLOCKS.registerWood("skyroot",     createSlimewood(MapColor.COLOR_CYAN,        MapColor.TERRACOTTA_CYAN), false);
   public static final WoodBlockObject bloodshroom = BLOCKS.registerWood("bloodshroom", createSlimewood(MapColor.COLOR_RED,         MapColor.COLOR_ORANGE),    false);
   public static final WoodBlockObject enderbark   = BLOCKS.registerWood("enderbark",   createSlimewood(MapColor.COLOR_BLACK,       MapColor.COLOR_BLACK),     false);
-  public static final ItemObject<Block> enderbarkRoots = BLOCKS.register("enderbark_roots", () -> new SlimeRootsBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).instrument(NoteBlockInstrument.BASS).strength(0.7F).randomTicks().sound(SoundType.MANGROVE_ROOTS).noOcclusion().isSuffocating(Blocks::never).isViewBlocking(Blocks::never).noOcclusion()), BLOCK_ITEM);
+  public static final ItemObject<Block> enderbarkRoots = BLOCKS.register("enderbark_roots", () -> new SlimeRootsBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).instrument(NoteBlockInstrument.BASS).strength(0.7F).randomTicks().sound(SoundType.MANGROVE_ROOTS).noOcclusion().isSuffocating((s, l, p) -> false).isViewBlocking((s, l, p) -> false).noOcclusion()), BLOCK_ITEM);
   public static final EnumObject<SlimeType,Block> slimyEnderbarkRoots = BLOCKS.registerEnum(SlimeType.values(), "enderbark_roots", type -> new SlimeDirtBlock(BlockBehaviour.Properties.of().mapColor(type.getMapColor()).strength(0.7F).sound(SoundType.MUDDY_MANGROVE_ROOTS).lightLevel(s -> type.getLightLevel())), BLOCK_ITEM);
 
   // plants
@@ -230,17 +228,17 @@ public final class TinkerWorld extends TinkerModule {
   public static final EnumObject<FoliageType, Block> slimeSapling = Util.make(() -> {
     Function<FoliageType,BlockBehaviour.Properties> props = type -> builder(type.getMapColor(), type.isNether() ? SoundType.FUNGUS : SoundType.GRASS).instabreak().noCollission().pushReaction(PushReaction.DESTROY);
     return new EnumObject.Builder<FoliageType,Block>(FoliageType.class)
-      .putAll(BLOCKS.registerEnum(FoliageType.OVERWORLD, "slime_sapling", (type) -> new SlimeSaplingBlock(new SlimeTree(type), type, props.apply(type).randomTicks()), TOOLTIP_BLOCK_ITEM))
+      .putAll(BLOCKS.registerEnum(FoliageType.OVERWORLD, "slime_sapling", (type) -> new SlimeSaplingBlock(SlimeTree.create(type), type, props.apply(type).randomTicks()), TOOLTIP_BLOCK_ITEM))
       .put(FoliageType.BLOOD, BLOCKS.register("blood_slime_sapling", () -> new SlimeFungusBlock(props.apply(FoliageType.BLOOD), TinkerStructures.bloodSlimeFungus), TOOLTIP_BLOCK_ITEM))
       .put(FoliageType.ICHOR, BLOCKS.register("ichor_slime_sapling", () -> new SlimeFungusBlock(props.apply(FoliageType.ICHOR), TinkerStructures.ichorSlimeFungus), BLOCK_ITEM))
-      .put(FoliageType.ENDER, BLOCKS.register("ender_slime_sapling", () -> new SlimePropaguleBlock(new SlimeTree(FoliageType.ENDER), FoliageType.ENDER, props.apply(FoliageType.ENDER)), TOOLTIP_BLOCK_ITEM))
+        .put(FoliageType.ENDER, BLOCKS.register("ender_slime_sapling", () -> new SlimePropaguleBlock(SlimeTree.create(FoliageType.ENDER), FoliageType.ENDER, props.apply(FoliageType.ENDER)), TOOLTIP_BLOCK_ITEM))
       .build();
   });
   public static final EnumObject<FoliageType,FlowerPotBlock> pottedSlimeSapling = BLOCKS.registerPottedEnum(FoliageType.values(), "slime_sapling", slimeSapling);
   public static final EnumObject<FoliageType, Block> slimeLeaves = new EnumObject.Builder<FoliageType, Block>(FoliageType.class)
-    .putAll(BLOCKS.registerEnum(FoliageType.OVERWORLD, "slime_leaves", type -> new SlimeLeavesBlock(builder(type.getMapColor(), SoundType.GRASS).strength(1.0f).randomTicks().noOcclusion().isValidSpawn(Blocks::never).isSuffocating(Blocks::never).isViewBlocking(Blocks::never).pushReaction(PushReaction.DESTROY).isRedstoneConductor(Blocks::never), type), BLOCK_ITEM))
+    .putAll(BLOCKS.registerEnum(FoliageType.OVERWORLD, "slime_leaves", type -> new SlimeLeavesBlock(builder(type.getMapColor(), SoundType.GRASS).strength(1.0f).randomTicks().noOcclusion().isValidSpawn((s, l, p, e) -> false).isSuffocating((s, l, p) -> false).isViewBlocking((s, l, p) -> false).pushReaction(PushReaction.DESTROY).isRedstoneConductor((s, l, p) -> false), type), BLOCK_ITEM))
     .putAll(BLOCKS.registerEnum(FoliageType.NETHER, "slime_leaves", type -> new Block(builder(type.getMapColor(), SoundType.WART_BLOCK).strength(1.5F).isValidSpawn((s, w, p, e) -> false)), BLOCK_ITEM))
-    .put(FoliageType.ENDER, BLOCKS.register("ender_slime_leaves", () -> new SlimePropaguleLeavesBlock(builder(FoliageType.ENDER.getMapColor(), SoundType.GRASS).strength(1.0f).randomTicks().noOcclusion().isValidSpawn(Blocks::never).isSuffocating(Blocks::never).isViewBlocking(Blocks::never).pushReaction(PushReaction.DESTROY).isRedstoneConductor(Blocks::never), FoliageType.ENDER), BLOCK_ITEM))
+    .put(FoliageType.ENDER, BLOCKS.register("ender_slime_leaves", () -> new SlimePropaguleLeavesBlock(builder(FoliageType.ENDER.getMapColor(), SoundType.GRASS).strength(1.0f).randomTicks().noOcclusion().isValidSpawn((s, l, p, e) -> false).isSuffocating((s, l, p) -> false).isViewBlocking((s, l, p) -> false).pushReaction(PushReaction.DESTROY).isRedstoneConductor((s, l, p) -> false), FoliageType.ENDER), BLOCK_ITEM))
     .build();
 
   // slime vines
@@ -269,10 +267,10 @@ public final class TinkerWorld extends TinkerModule {
   public static final ResourceKey<ConfiguredFeature<?,?>> configuredEnderGeode = key(Registries.CONFIGURED_FEATURE, "ender_geode");
   public static final ResourceKey<PlacedFeature> placedEnderGeode = key(Registries.PLACED_FEATURE, "ender_geode");
 
-  public static final ResourceKey<BiomeModifier> spawnEarthGeode = key(ForgeRegistries.Keys.BIOME_MODIFIERS, "earth_geode");
-  public static final ResourceKey<BiomeModifier> spawnSkyGeode = key(ForgeRegistries.Keys.BIOME_MODIFIERS, "sky_geode");
-  public static final ResourceKey<BiomeModifier> spawnIchorGeode = key(ForgeRegistries.Keys.BIOME_MODIFIERS, "ichor_geode");
-  public static final ResourceKey<BiomeModifier> spawnEnderGeode = key(ForgeRegistries.Keys.BIOME_MODIFIERS, "ender_geode");
+  public static final ResourceKey<BiomeModifier> spawnEarthGeode = key(NeoForgeRegistries.Keys.BIOME_MODIFIERS, "earth_geode");
+  public static final ResourceKey<BiomeModifier> spawnSkyGeode = key(NeoForgeRegistries.Keys.BIOME_MODIFIERS, "sky_geode");
+  public static final ResourceKey<BiomeModifier> spawnIchorGeode = key(NeoForgeRegistries.Keys.BIOME_MODIFIERS, "ichor_geode");
+  public static final ResourceKey<BiomeModifier> spawnEnderGeode = key(NeoForgeRegistries.Keys.BIOME_MODIFIERS, "ender_geode");
 
   // heads
   public static final EnumObject<TinkerHeadType,SkullBlock> heads = BLOCKS.registerEnumNoItem(TinkerHeadType.values(), "head", TinkerWorld::makeHead);
@@ -287,36 +285,33 @@ public final class TinkerWorld extends TinkerModule {
     EntityType.Builder.of(SkySlimeEntity::new, MobCategory.MONSTER)
                       .setShouldReceiveVelocityUpdates(true)
                       .setTrackingRange(20)
-                      .sized(2.04F, 2.04F)
-                      .setCustomClientFactory((spawnEntity, world) -> TinkerWorld.skySlimeEntity.get().create(world)), 0x47eff5, 0xacfff4);
+                      .sized(2.04F, 2.04F), 0x47eff5, 0xacfff4);
   public static final EntityObject<EnderSlimeEntity> enderSlimeEntity = ENTITIES.registerWithEgg("ender_slime", () ->
     EntityType.Builder.of(EnderSlimeEntity::new, MobCategory.MONSTER)
                       .setShouldReceiveVelocityUpdates(true)
                       .setTrackingRange(32)
-                      .sized(2.04F, 2.04F)
-                      .setCustomClientFactory((spawnEntity, world) -> TinkerWorld.enderSlimeEntity.get().create(world)), 0x6300B0, 0xD37CFF);
+                      .sized(2.04F, 2.04F), 0x6300B0, 0xD37CFF);
   public static final EntityObject<TerracubeEntity> terracubeEntity = ENTITIES.registerWithEgg("terracube", () ->
     EntityType.Builder.of(TerracubeEntity::new, MobCategory.MONSTER)
                       .setShouldReceiveVelocityUpdates(true)
                       .setTrackingRange(8)
-                      .sized(2.04F, 2.04F)
-                      .setCustomClientFactory((spawnEntity, world) -> TinkerWorld.terracubeEntity.get().create(world)), 0xAFB9D6, 0xA1A7B1);
+                      .sized(2.04F, 2.04F), 0xAFB9D6, 0xA1A7B1);
 
-  public static final ResourceKey<BiomeModifier> spawnOverworldSlime = key(ForgeRegistries.Keys.BIOME_MODIFIERS, "spawn_overworld_slime");
-  public static final ResourceKey<BiomeModifier> spawnTerracube = key(ForgeRegistries.Keys.BIOME_MODIFIERS, "spawn_terracube");
-  public static final ResourceKey<BiomeModifier> spawnEndSlime = key(ForgeRegistries.Keys.BIOME_MODIFIERS, "spawn_end_slime");
+  public static final ResourceKey<BiomeModifier> spawnOverworldSlime = key(NeoForgeRegistries.Keys.BIOME_MODIFIERS, "spawn_overworld_slime");
+  public static final ResourceKey<BiomeModifier> spawnTerracube = key(NeoForgeRegistries.Keys.BIOME_MODIFIERS, "spawn_terracube");
+  public static final ResourceKey<BiomeModifier> spawnEndSlime = key(NeoForgeRegistries.Keys.BIOME_MODIFIERS, "spawn_end_slime");
 
   /*
    * Particles
    */
-  public static final RegistryObject<SimpleParticleType> skySlimeParticle = PARTICLE_TYPES.register("sky_slime", () -> new SimpleParticleType(false));
-  public static final RegistryObject<SimpleParticleType> enderSlimeParticle = PARTICLE_TYPES.register("ender_slime", () -> new SimpleParticleType(false));
-  public static final RegistryObject<SimpleParticleType> terracubeParticle = PARTICLE_TYPES.register("terracube", () -> new SimpleParticleType(false));
+  public static final DeferredHolder<ParticleType<?>, SimpleParticleType> skySlimeParticle = PARTICLE_TYPES.register("sky_slime", () -> new SimpleParticleType(false));
+  public static final DeferredHolder<ParticleType<?>, SimpleParticleType> enderSlimeParticle = PARTICLE_TYPES.register("ender_slime", () -> new SimpleParticleType(false));
+  public static final DeferredHolder<ParticleType<?>, SimpleParticleType> terracubeParticle = PARTICLE_TYPES.register("terracube", () -> new SimpleParticleType(false));
 
   /*
    * Features
    */
-  public static ResourceKey<BiomeModifier> spawnCobaltOre = key(ForgeRegistries.Keys.BIOME_MODIFIERS, "cobalt_ore");
+  public static ResourceKey<BiomeModifier> spawnCobaltOre = key(NeoForgeRegistries.Keys.BIOME_MODIFIERS, "cobalt_ore");
   // small veins, standard distribution
   public static ResourceKey<ConfiguredFeature<?,?>> configuredSmallCobaltOre = key(Registries.CONFIGURED_FEATURE, "cobalt_ore_small");
   public static ResourceKey<PlacedFeature> placedSmallCobaltOre = key(Registries.PLACED_FEATURE, "cobalt_ore_small");
@@ -352,26 +347,33 @@ public final class TinkerWorld extends TinkerModule {
   }
 
   @SubscribeEvent
-  void registerSpawnPlacement(SpawnPlacementRegisterEvent event) {
-    event.register(EntityType.SLIME, null, null, new SlimePlacementPredicate<>(TinkerTags.Blocks.EARTH_SLIME_SPAWN), Operation.OR);
-    event.register(skySlimeEntity.get(),   SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new SlimePlacementPredicate<>(TinkerTags.Blocks.SKY_SLIME_SPAWN), Operation.OR);
-    event.register(enderSlimeEntity.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new SlimePlacementPredicate<>(TinkerTags.Blocks.ENDER_SLIME_SPAWN), Operation.OR);
-    event.register(terracubeEntity.get(),  SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, TerracubeEntity::canSpawnHere, Operation.OR);
+  void registerSpawnPlacement(RegisterSpawnPlacementsEvent event) {
+    event.register(EntityType.SLIME, new SlimePlacementPredicate<>(TinkerTags.Blocks.EARTH_SLIME_SPAWN), RegisterSpawnPlacementsEvent.Operation.OR);
+    event.register(skySlimeEntity.get(),   new SlimePlacementPredicate<>(TinkerTags.Blocks.SKY_SLIME_SPAWN), RegisterSpawnPlacementsEvent.Operation.OR);
+    event.register(enderSlimeEntity.get(), new SlimePlacementPredicate<>(TinkerTags.Blocks.ENDER_SLIME_SPAWN), RegisterSpawnPlacementsEvent.Operation.OR);
+    event.register(terracubeEntity.get(), TerracubeEntity::canSpawnHere, RegisterSpawnPlacementsEvent.Operation.OR);
+  }
 
+  @SubscribeEvent
+  void addHeadBlocksToSkullType(BlockEntityTypeAddBlocksEvent event) {
+    List<Block> blocks = new ArrayList<>();
+    heads.forEach((type, block) -> blocks.add(block));
+    wallHeads.forEach((type, block) -> blocks.add(block));
+    event.modify(BlockEntityType.SKULL, blocks.toArray(new Block[0]));
   }
 
   @SubscribeEvent
   void commonSetup(final FMLCommonSetupEvent event) {
     // compostables
     event.enqueueWork(() -> {
-      slimeLeaves.forEach((type, block) -> ComposterBlock.add(type.isNether() ? 0.85f : 0.35f, block));
-      slimeSapling.forEach(block -> ComposterBlock.add(0.35f, block));
-      slimeTallGrass.forEach(block -> ComposterBlock.add(0.35f, block));
-      slimeFern.forEach(block -> ComposterBlock.add(0.65f, block));
-      slimeGrassSeeds.forEach(block -> ComposterBlock.add(0.35F, block));
-      ComposterBlock.add(0.5f, skySlimeVine);
-      ComposterBlock.add(0.5f, enderSlimeVine);
-      ComposterBlock.add(0.4f, enderbarkRoots);
+      slimeLeaves.forEach((type, block) -> ComposterBlock.COMPOSTABLES.put(block.asItem(), type.isNether() ? 0.85f : 0.35f));
+      slimeSapling.forEach(block -> ComposterBlock.COMPOSTABLES.put(block.asItem(), 0.35f));
+      slimeTallGrass.forEach(block -> ComposterBlock.COMPOSTABLES.put(block.asItem(), 0.35f));
+      slimeFern.forEach(block -> ComposterBlock.COMPOSTABLES.put(block.asItem(), 0.65f));
+      slimeGrassSeeds.forEach(block -> ComposterBlock.COMPOSTABLES.put(block.asItem(), 0.35F));
+      ComposterBlock.COMPOSTABLES.put(skySlimeVine.asItem(), 0.5f);
+      ComposterBlock.COMPOSTABLES.put(enderSlimeVine.asItem(), 0.5f);
+      ComposterBlock.COMPOSTABLES.put(enderbarkRoots.asItem(), 0.4f);
 
       // head equipping
       DispenseItemBehavior dispenseArmor = new OptionalDispenseItemBehavior() {
@@ -382,16 +384,25 @@ public final class TinkerWorld extends TinkerModule {
         }
       };
       TinkerWorld.heads.forEach(head -> DispenserBlock.registerBehavior(head, dispenseArmor));
-      // heads in firework stars
-      TinkerWorld.heads.forEach(head -> FireworkStarRecipe.SHAPE_BY_ITEM.put(head.asItem(), FireworkRocketItem.Shape.CREEPER));
-      // inject heads into the tile entity type
-      event.enqueueWork(() -> {
-        ImmutableSet.Builder<Block> builder = ImmutableSet.builder();
-        builder.addAll(BlockEntityType.SKULL.validBlocks);
-        TinkerWorld.heads.forEach(head -> builder.add(head));
-        TinkerWorld.wallHeads.forEach(head -> builder.add(head));
-        BlockEntityType.SKULL.validBlocks = builder.build();
-      });
+
+      // firework creeper shape supports custom heads via the recipe's type map in 1.21.1
+      try {
+        Field shapeMapField = FireworkStarRecipe.class.getDeclaredField("TYPE_MODIFIER_MAP");
+        shapeMapField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<Item,Object> shapeMap = (Map<Item,Object>)shapeMapField.get(null);
+        if (!shapeMap.isEmpty()) {
+          Object firstValue = shapeMap.values().iterator().next();
+          Class<?> enumClass = firstValue.getClass();
+          if (enumClass.isEnum()) {
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            Object creeperType = Enum.valueOf((Class<? extends Enum>)enumClass, "CREEPER");
+            TinkerWorld.heads.forEach(head -> shapeMap.put(head.asItem(), creeperType));
+          }
+        }
+      } catch (ReflectiveOperationException exception) {
+        TConstruct.LOG.warn("Failed to register custom head firework shapes", exception);
+      }
     });
 
     // flammability
@@ -417,7 +428,7 @@ public final class TinkerWorld extends TinkerModule {
     DataGenerator generator = event.getGenerator();
     boolean server = event.includeServer();
     PackOutput packOutput = generator.getPackOutput();
-    generator.addProvider(server, new WorldRecipeProvider(packOutput));
+    generator.addProvider(server, new WorldRecipeProvider(packOutput, event.getLookupProvider()));
     generator.addProvider(server, new MobEquipmentProvider(packOutput));
   }
 

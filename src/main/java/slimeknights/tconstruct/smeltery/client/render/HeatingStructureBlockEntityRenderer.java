@@ -1,12 +1,10 @@
 package slimeknights.tconstruct.smeltery.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider.Context;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -18,11 +16,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Quaternionf;
 import slimeknights.tconstruct.common.config.Config;
-import slimeknights.tconstruct.library.client.TinkerRenderTypes;
 import slimeknights.tconstruct.library.TinkerItemDisplays;
 import slimeknights.tconstruct.smeltery.block.controller.ControllerBlock;
 import slimeknights.tconstruct.smeltery.block.entity.controller.HeatingStructureBlockEntity;
@@ -54,9 +50,7 @@ public class HeatingStructureBlockEntityRenderer implements BlockEntityRenderer<
         int dx = playerPos.getX() - pos.getX();
         int dz = playerPos.getZ() - pos.getZ();
         if ((dx * dx + dz * dz) < 512) {
-          // color will be yellow if the structure is valid (expanding), red if invalid
-          VertexConsumer vertexBuilder = buffer.getBuffer(highlightError ? TinkerRenderTypes.ERROR_BLOCK : RenderType.LINES);
-          LevelRenderer.renderShape(matrices, vertexBuilder, Shapes.block(), errorPos.getX() - pos.getX(), errorPos.getY() - pos.getY(), errorPos.getZ() - pos.getZ(), 1f, structureValid ? 1f : 0f, 0f, 0.5f);
+          // TODO 1.21.1: restore debug border rendering via a public LevelRenderer alternative.
         }
       }
     }

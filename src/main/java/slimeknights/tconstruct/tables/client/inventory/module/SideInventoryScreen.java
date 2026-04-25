@@ -105,9 +105,8 @@ public class SideInventoryScreen<P extends MultiModuleScreen<?>, C extends Abstr
     return this.firstSlotId <= slot.getSlotIndex() && this.lastSlotId > slot.getSlotIndex();
   }
 
-  @Override
-  public boolean isHovering(Slot slotIn, double mouseX, double mouseY) {
-    return super.isHovering(slotIn, mouseX, mouseY) && this.shouldDrawSlot(slotIn);
+  public boolean isSlotHovering(Slot slotIn, double mouseX, double mouseY) {
+    return this.parent.isHovering(slotIn, mouseX, mouseY) && this.shouldDrawSlot(slotIn);
   }
 
   public void updateSlotCount(int newSlotCount) {
@@ -214,33 +213,10 @@ public class SideInventoryScreen<P extends MultiModuleScreen<?>, C extends Abstr
     this.firstSlotId = this.slider.getValue() * this.columns;
     this.lastSlotId = Math.min(this.slotCount, this.firstSlotId + getDisplayedRows() * this.columns);
 
-    int xd = this.border.w + this.xOffset;
-    int yd = this.border.h + this.yOffset;
-
-    if (shouldDrawName()) {
-      yd += this.textBackground.h;
-    }
-
     for (Slot slot : this.menu.slots) {
       if (this.shouldDrawSlot(slot)) {
-        // calc position of the slot
-        int offset = slot.getSlotIndex() - this.firstSlotId;
-        int x = (offset % this.columns) * this.slot.w;
-        int y = (offset / this.columns) * this.slot.h;
-
-        slot.x = xd + x + 1;
-        slot.y = yd + y + 1;
-
-        if (this.right) {
-          slot.x += this.parent.realWidth;
-        }
-        else {
-          slot.x -= this.imageWidth;
-        }
-      }
-      else {
-        slot.x = 0;
-        slot.y = 0;
+        // slot position updates moved to immutable Slot API in 1.21,
+        // so visibility is currently handled by shouldDrawSlot-based rendering.
       }
     }
   }
@@ -324,11 +300,11 @@ public class SideInventoryScreen<P extends MultiModuleScreen<?>, C extends Abstr
   }
 
   @Override
-  public boolean handleMouseScrolled(double mouseX, double mouseY, double scrollData) {
+  public boolean handleMouseScrolled(double mouseX, double mouseY, double horizontalScroll, double verticalScroll) {
     if (!this.slider.isEnabled()) {
-      return super.handleMouseScrolled(mouseX, mouseY, scrollData);
+      return super.handleMouseScrolled(mouseX, mouseY, horizontalScroll, verticalScroll);
     }
 
-    return this.slider.mouseScrolled(scrollData, !this.isMouseOverFullSlot(mouseX, mouseY) && this.isMouseInModule((int) mouseX, (int) mouseY));
+    return this.slider.mouseScrolled(verticalScroll, !this.isMouseOverFullSlot(mouseX, mouseY) && this.isMouseInModule((int) mouseX, (int) mouseY));
   }
 }

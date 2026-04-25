@@ -16,7 +16,7 @@ public interface MiningSpeedToolHook {
 
   /** Gets the mining speed for the tool against the given state */
   static float getDestroySpeed(ItemStack tool, BlockState state) {
-    if (!tool.hasTag()) {
+    if (tool.isEmpty()) {
       return 1;
     }
     return getDestroySpeed(ToolStack.from(tool), state);

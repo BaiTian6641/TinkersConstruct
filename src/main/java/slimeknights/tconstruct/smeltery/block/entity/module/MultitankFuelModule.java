@@ -6,15 +6,14 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.util.NonNullConsumer;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.EmptyFluidHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import slimeknights.tconstruct.compat.neoforge.common.util.LazyOptional;
+import java.util.function.Consumer;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.templates.EmptyFluidHandler;
 import slimeknights.mantle.block.entity.MantleBlockEntity;
 import slimeknights.mantle.util.WeakConsumerWrapper;
-import slimeknights.tconstruct.library.utils.Util;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,7 +36,7 @@ public class MultitankFuelModule extends FuelModule implements IFluidHandler {
   /** Map of all tank handlers at each relevant position. Used for fast switching between handlers, notably in the UI */
   private Map<BlockPos,LazyOptional<IFluidHandler>> tankHandlers;
   /** Listener to attach to display capabilities */
-  private final NonNullConsumer<LazyOptional<IFluidHandler>> tankHandlerListener = new WeakConsumerWrapper<>(this, (self, cap) -> {
+  private final Consumer<LazyOptional<IFluidHandler>> tankHandlerListener = new WeakConsumerWrapper<>(this, (self, cap) -> {
     if (self.tankHandlers != null) {
       self.tankHandlers.values().remove(cap);
     }
@@ -64,20 +63,25 @@ public class MultitankFuelModule extends FuelModule implements IFluidHandler {
   /** Called on structure rebuild to clear the gui handler list */
   public void clearFluidListeners() {
     if (tankHandlers != null) {
-      if (Util.isForge()) {
-        for (LazyOptional<IFluidHandler> handler : tankHandlers.values()) {
-          handler.removeListener(tankHandlerListener);
-        }
-      }
       tankHandlers = null;
     }
+  }
+
+  @Nullable
+  private IFluidHandler getFluidHandler(Level world, BlockPos pos, @Nullable BlockEntity be) {
+    BlockEntity target = be != null ? be : world.getBlockEntity(pos);
+    if (target == null) {
+      return null;
+    }
+    return world.getCapability(Capabilities.FluidHandler.BLOCK, pos, target.getBlockState(), target, null);
   }
 
   /** Called on servant load to ensure the listener is present in the cache */
   public void ensureTankPresent(BlockEntity be) {
     BlockPos pos = be.getBlockPos();
     if (tankHandlers != null && !tankHandlers.containsKey(pos)) {
-      LazyOptional<IFluidHandler> handler = be.getCapability(ForgeCapabilities.FLUID_HANDLER);
+      IFluidHandler fluidHandler = getFluidHandler(getLevel(), pos, be);
+      LazyOptional<IFluidHandler> handler = fluidHandler != null ? LazyOptional.of(() -> fluidHandler) : LazyOptional.empty();
       if (handler.isPresent()) {
         handler.addListener(tankHandlerListener);
         tankHandlers.put(pos, handler);
@@ -93,7 +97,8 @@ public class MultitankFuelModule extends FuelModule implements IFluidHandler {
       for (BlockPos pos : tankSupplier.get()) {
         BlockEntity te = world.getBlockEntity(pos);
         if (te != null) {
-          LazyOptional<IFluidHandler> handler = te.getCapability(ForgeCapabilities.FLUID_HANDLER);
+          IFluidHandler fluidHandler = getFluidHandler(world, pos, te);
+          LazyOptional<IFluidHandler> handler = fluidHandler != null ? LazyOptional.of(() -> fluidHandler) : LazyOptional.empty();
           if (handler.isPresent()) {
             handler.addListener(tankHandlerListener);
             tankHandlers.put(pos, handler);
@@ -178,7 +183,9 @@ public class MultitankFuelModule extends FuelModule implements IFluidHandler {
   public void readFromTag(CompoundTag nbt) {
     super.readFromTag(nbt);
     if (nbt.contains(TAG_LAST_FUEL, Tag.TAG_COMPOUND)) {
-      lastPos = NbtUtils.readBlockPos(nbt.getCompound(TAG_LAST_FUEL)).offset(parent.getBlockPos());
+      CompoundTag posTag = nbt.getCompound(TAG_LAST_FUEL);
+      BlockPos offset = new BlockPos(posTag.getInt("X"), posTag.getInt("Y"), posTag.getInt("Z"));
+      lastPos = offset.offset(parent.getBlockPos());
     }
   }
 
@@ -269,7 +276,7 @@ public class MultitankFuelModule extends FuelModule implements IFluidHandler {
             FluidStack fluid = handler.getFluidInTank(0);
             if (fluid.isEmpty()) {
               info.add(0, handler.getTankCapacity(0));
-            } else if (currentFuel.isFluidEqual(fluid)) {
+            } else if (FluidStack.isSameFluidSameComponents(currentFuel, fluid)) {
               info.add(fluid.getAmount(), handler.getTankCapacity(0));
             }
           });
@@ -351,7 +358,7 @@ public class MultitankFuelModule extends FuelModule implements IFluidHandler {
         }
         // if this was our first fill, copy the resource
         if (totalFilled == filled) {
-          resource = new FluidStack(resource, resource.getAmount() - filled);
+          resource = resource.copyWithAmount(resource.getAmount() - filled);
         } else {
           resource.shrink(filled);
         }
@@ -379,7 +386,7 @@ public class MultitankFuelModule extends FuelModule implements IFluidHandler {
           if (drained.getAmount() >= resource.getAmount()) {
             break;
           }
-          resource = new FluidStack(resource, resource.getAmount() - drained.getAmount());
+          resource = resource.copyWithAmount(resource.getAmount() - drained.getAmount());
         } else {
           // resource is guaranteed a copy, and drainedSoFar is a newly created stack, both safe to mutate
           drainedSoFar.grow(drained.getAmount());
@@ -412,7 +419,7 @@ public class MultitankFuelModule extends FuelModule implements IFluidHandler {
           if (drained.getAmount() >= maxDrain) {
             break;
           }
-          toDrain = new FluidStack(drained, maxDrain - drained.getAmount());
+          toDrain = drained.copyWithAmount(maxDrain - drained.getAmount());
         }
       } else {
         // if we already drained some fluid, type sensitive and increase our results

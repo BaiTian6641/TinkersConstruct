@@ -5,14 +5,13 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.util.NonNullConsumer;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.EmptyFluidHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import slimeknights.tconstruct.compat.neoforge.common.util.LazyOptional;
+import java.util.function.Consumer;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.templates.EmptyFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 import slimeknights.mantle.block.entity.MantleBlockEntity;
 import slimeknights.mantle.inventory.EmptyItemHandler;
 import slimeknights.mantle.util.WeakConsumerWrapper;
@@ -27,7 +26,7 @@ import javax.annotation.Nullable;
 /** Fuel module variant that supports both item and fluid fuels. Only supports a single fluid position which should not change. */
 public class SolidFuelModule extends FuelModule {
   /** Listener to attach to stored item capabilities */
-  private final NonNullConsumer<LazyOptional<IItemHandler>> itemListener = new WeakConsumerWrapper<>(this, SolidFuelModule::resetHandler);
+  private final Consumer<LazyOptional<IItemHandler>> itemListener = new WeakConsumerWrapper<>(this, SolidFuelModule::resetHandler);
 
   /** Location of the fuel tank */
   private final BlockPos fuelPos;
@@ -44,15 +43,6 @@ public class SolidFuelModule extends FuelModule {
   protected void resetHandler(@Nullable LazyOptional<?> source) {
     // if the source is either of our handlers, clear both listeners to ensure cleanest refetc
     if (source == null || source == itemHandler || source == fluidHandler) {
-      // remove listeners for efficiency, but we have to skip removing the listener that caused this
-      if (Util.isForge()) {
-        if (itemHandler != null && itemHandler != source) {
-          itemHandler.removeListener(itemListener);
-        }
-        if (fluidHandler != null && fluidHandler != source) {
-          fluidHandler.removeListener(fluidListener);
-        }
-      }
       itemHandler = null;
       fluidHandler = null;
     }
@@ -69,7 +59,7 @@ public class SolidFuelModule extends FuelModule {
   private int trySolidFuel(IItemHandler handler, boolean consume) {
     for (int i = 0; i < handler.getSlots(); i++) {
       ItemStack stack = handler.getStackInSlot(i);
-      int time = ForgeHooks.getBurnTime(stack, TinkerRecipeTypes.FUEL.get()) / 4;
+      int time = stack.getBurnTime(TinkerRecipeTypes.FUEL.get()) / 4;
       if (time > 0) {
         MeltingFuel solid = MeltingFuelLookup.getSolid();
         if (consume) {
@@ -113,16 +103,14 @@ public class SolidFuelModule extends FuelModule {
     }
     BlockEntity te = getLevel().getBlockEntity(fuelPos);
     if (te != null) {
+      Level level = getLevel();
+      var state = te.getBlockState();
       // first, identify a capability that has what we need
       // on the chance both are present, we prioritize fluid; we don't expect that to change
-      fluidHandler = te.getCapability(ForgeCapabilities.FLUID_HANDLER);
-      if (fluidHandler.isPresent()) {
-        fluidHandler.addListener(fluidListener);
-      }
-      itemHandler = te.getCapability(ForgeCapabilities.ITEM_HANDLER);
-      if (itemHandler.isPresent()) {
-        itemHandler.addListener(itemListener);
-      }
+      IFluidHandler fluid = level.getCapability(Capabilities.FluidHandler.BLOCK, fuelPos, state, te, null);
+      fluidHandler = fluid != null ? LazyOptional.of(() -> fluid) : LazyOptional.empty();
+      IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, fuelPos, state, te, null);
+      itemHandler = items != null ? LazyOptional.of(() -> items) : LazyOptional.empty();
     } else {
       fluidHandler = LazyOptional.empty();
       itemHandler = LazyOptional.empty();

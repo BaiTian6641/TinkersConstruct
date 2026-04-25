@@ -2,9 +2,9 @@ package slimeknights.tconstruct.gadgets.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
@@ -13,8 +13,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
+// NOTE: IEntityAdditionalSpawnData and NetworkHooks removed in 1.21.1 - custom entity spawn data disabled
+// import net.minecraftforge.entity.IEntityAdditionalSpawnData;
+// 
 import slimeknights.tconstruct.gadgets.TinkerGadgets;
 import slimeknights.tconstruct.shared.TinkerCommons;
 
@@ -22,7 +23,7 @@ import javax.annotation.Nonnull;
 
 /** @deprecated use {@link slimeknights.tconstruct.tools.entity.ThrownShuriken} */
 @Deprecated
-public class GlowballEntity extends ThrowableItemProjectile implements IEntityAdditionalSpawnData {
+public class GlowballEntity extends ThrowableItemProjectile {
   public GlowballEntity(EntityType<? extends GlowballEntity> p_i50159_1_, Level p_i50159_2_) {
     super(p_i50159_1_, p_i50159_2_);
   }
@@ -69,6 +70,9 @@ public class GlowballEntity extends ThrowableItemProjectile implements IEntityAd
     }
   }
 
+  // NOTE: IEntityAdditionalSpawnData interface removed - spawn data methods disabled
+  // Entity data synchronization now relies on EntityDataSerializers only
+  /*
   @Override
   public void writeSpawnData(FriendlyByteBuf buffer) {
     buffer.writeItem(this.getItemRaw());
@@ -78,10 +82,11 @@ public class GlowballEntity extends ThrowableItemProjectile implements IEntityAd
   public void readSpawnData(FriendlyByteBuf additionalData) {
     this.setItem(additionalData.readItem());
   }
+  */
 
   @Nonnull
   @Override
-  public Packet<ClientGamePacketListener> getAddEntityPacket() {
-    return NetworkHooks.getEntitySpawningPacket(this);
+  public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+    return super.getAddEntityPacket(serverEntity);
   }
 }

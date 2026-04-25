@@ -1,6 +1,7 @@
 package slimeknights.tconstruct.library.tools.helper;
 
 import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -9,6 +10,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import slimeknights.tconstruct.common.TinkerTags;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.modifiers.ModifierHooks;
@@ -30,7 +32,9 @@ public class ToolDamageUtil {
    * @param stack  Tool stack
    */
   public static void breakTool(ItemStack stack) {
-    stack.getOrCreateTag().putBoolean(ToolStack.TAG_BROKEN, true);
+    CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    tag.putBoolean(ToolStack.TAG_BROKEN, true);
+    stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
   }
 
   /**
@@ -39,8 +43,7 @@ public class ToolDamageUtil {
    * @return  True if broken
    */
   public static boolean isBroken(ItemStack stack) {
-    CompoundTag nbt = stack.getTag();
-    return nbt != null && nbt.getBoolean(ToolStack.TAG_BROKEN);
+    return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getBoolean(ToolStack.TAG_BROKEN);
   }
 
   /**
@@ -49,7 +52,7 @@ public class ToolDamageUtil {
    * For normal tool usages, see {@link ToolStack#getStats()} with {@link ToolStats#DURABILITY}.
    */
   public static int getFakeMaxDamage(ItemStack stack) {
-    if (!stack.getItem().canBeDepleted()) {
+    if (!stack.isDamageableItem()) {
       return 0;
     }
     ToolStack tool = ToolStack.from(stack);
@@ -150,7 +153,6 @@ public class ToolDamageUtil {
    */
   public static boolean damageAnimated(IToolStackView tool, int amount, LivingEntity entity, EquipmentSlot slot, ModifierId cause) {
     if (damage(tool, amount, entity, entity.getItemBySlot(slot), cause)) {
-      entity.broadcastBreakEvent(slot);
       return true;
     }
     return false;
@@ -180,8 +182,7 @@ public class ToolDamageUtil {
    */
   public static boolean damageAnimated(IToolStackView tool, int amount, LivingEntity entity, InteractionHand hand, ModifierId cause) {
     if (damage(tool, amount, entity, entity.getItemInHand(hand), cause)) {
-      entity.broadcastBreakEvent(hand);
-      // TODO: why don't we fire ForgeEventFactory.onPlayerDestroyItem here?
+      // TODO: why don't we fire EventHooks.onPlayerDestroyItem here?
       return true;
     }
     return false;
@@ -214,7 +215,6 @@ public class ToolDamageUtil {
         ItemStack stack = entity.getItemBySlot(slot);
         if (tool.isSameStack(stack)) {
           if (damage(tool, amount, entity, stack, cause)) {
-            entity.broadcastBreakEvent(slot);
             return true;
           }
           return false;
@@ -257,7 +257,7 @@ public class ToolDamageUtil {
   public static <T extends LivingEntity> void handleDamageItem(ItemStack stack, int amount, T damager, Consumer<T> onBroken) {
     // We basically emulate Itemstack.damageItem here. We always return 0 to skip the handling in ItemStack.
     // If we don't tools ignore our damage logic
-    if (stack.getItem().canBeDepleted() && ToolDamageUtil.damage(ToolStack.from(stack), amount, damager, stack)) {
+    if (stack.isDamageableItem() && ToolDamageUtil.damage(ToolStack.from(stack), amount, damager, stack)) {
       onBroken.accept(damager);
     }
   }

@@ -7,7 +7,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.common.util.TablePrinter;
+import net.neoforged.neoforge.common.util.TablePrinter;
 import slimeknights.mantle.command.MantleCommand;
 import slimeknights.mantle.util.RegistryHelper;
 import slimeknights.tconstruct.TConstruct;
@@ -113,7 +113,7 @@ public class ModifierUsageCommand {
     }
     // if requested, filter out all
     if (filter == ModifierUsages.UNUSED) {
-      modifierStream = modifierStream.filter(modifier -> !ModifierRecipeLookup.isRecipeModifier(modifier.getId()) && !materialTraits.contains(modifier) && !toolTraits.contains(modifier));
+      modifierStream = modifierStream.filter(modifier -> !ModifierRecipeLookup.isRecipeModifier(modifier.getModifierId()) && !materialTraits.contains(modifier) && !toolTraits.contains(modifier));
     }
 
     // start building the table for output
@@ -146,16 +146,16 @@ public class ModifierUsageCommand {
     finalList.forEach(modifier -> {
       // determine which recipes use this by slot type
       List<String> recipeUsages = SlotType.getAllSlotTypes().stream()
-                                          .filter(type -> ModifierRecipeLookup.isRecipeModifier(type, modifier.getId()))
+                                          .filter(type -> ModifierRecipeLookup.isRecipeModifier(type, modifier.getModifierId()))
                                           .map(SlotType::getName)
                                           .collect(Collectors.toList());
       String recipes;
       if (recipeUsages.isEmpty()) {
-        recipes = ModifierRecipeLookup.isRecipeModifier(null, modifier.getId()) ? "slotless" : "";
+        recipes = ModifierRecipeLookup.isRecipeModifier(null, modifier.getModifierId()) ? "slotless" : "";
       } else {
         recipes = String.join(", ", recipeUsages);
       }
-      table.add(new ModifierUsageRow(modifier.getId(), recipes, toolTraits.contains(modifier), materialTraits.contains(modifier)));
+      table.add(new ModifierUsageRow(modifier.getModifierId(), recipes, toolTraits.contains(modifier), materialTraits.contains(modifier)));
     });
 
     // finally, output the table

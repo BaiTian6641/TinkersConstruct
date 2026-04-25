@@ -15,10 +15,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.eventbus.api.Event.Result;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
 import slimeknights.mantle.data.loadable.record.SingletonLoader;
 import slimeknights.tconstruct.common.TinkerTags;
+import slimeknights.tconstruct.library.events.TinkerToolEvent.Result;
 import slimeknights.tconstruct.library.events.TinkerToolEvent.ToolHarvestEvent;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.modifiers.ModifierHooks;
@@ -70,7 +70,7 @@ public enum HarvestModule implements ModifierModule, BlockInteractionModifierHoo
    */
   private static boolean harvestInteract(UseOnContext context, ServerLevel world, BlockState state, BlockPos pos, Player player) {
     BlockHitResult trace = new BlockHitResult(context.getClickLocation(), context.getClickedFace(), pos, false);
-    InteractionResult result = state.use(world, player, context.getHand(), trace);
+    InteractionResult result = state.useWithoutItem(world, player, trace);
     return result.consumesAction();
   }
 
@@ -126,10 +126,15 @@ public enum HarvestModule implements ModifierModule, BlockInteractionModifierHoo
         }
       }
       // must have an age property, and be at max age
-      if (age == null || state.getValue(age) < age.max) {
+      if (age == null) {
         return false;
       }
-      replant = state.setValue(age, age.min);
+      int maxAge = age.getPossibleValues().stream().mapToInt(Integer::intValue).max().orElse(0);
+      int minAge = age.getPossibleValues().stream().mapToInt(Integer::intValue).min().orElse(0);
+      if (state.getValue(age) < maxAge) {
+        return false;
+      }
+      replant = state.setValue(age, minAge);
     }
 
     // crop is fully grown, get block drops
@@ -260,9 +265,6 @@ public enum HarvestModule implements ModifierModule, BlockInteractionModifierHoo
         if (player != null) {
           if (didHarvest) {
             player.sweepAttack();
-          }
-          if (broken) {
-            player.broadcastBreakEvent(context.getHand());
           }
         }
       }

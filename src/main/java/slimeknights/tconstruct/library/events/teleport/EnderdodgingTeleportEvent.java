@@ -1,7 +1,7 @@
 package slimeknights.tconstruct.library.events.teleport;
 
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.eventbus.api.Cancelable;
+import net.neoforged.bus.api.ICancellableEvent;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.tools.data.ModifierIds;
 
@@ -10,7 +10,7 @@ import slimeknights.tconstruct.tools.data.ModifierIds;
  * @deprecated replacing with {@link ModifierTeleportEvent} in the future.
  */
 @SuppressWarnings("DeprecatedIsStillUsed")
-@Cancelable
+
 @Deprecated
 public class EnderdodgingTeleportEvent extends ModifierTeleportEvent {
   public EnderdodgingTeleportEvent(Entity entity, double targetX, double targetY, double targetZ, ModifierEntry modifier) {

@@ -2,7 +2,9 @@ package slimeknights.tconstruct.library.recipe.casting.container;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
@@ -11,11 +13,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import slimeknights.mantle.data.loadable.Loadables;
 import slimeknights.mantle.data.loadable.field.ContextKey;
 import slimeknights.mantle.data.loadable.primitive.IntLoadable;
@@ -58,9 +59,8 @@ public class ContainerFillingRecipe implements ICastingRecipe, IMultiRecipe<Disp
   @Override
   public int getFluidAmount(ICastingContainer inv) {
     Fluid fluid = inv.getFluid();
-    return inv.getStack().getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
-              .map(handler -> handler.fill(new FluidStack(fluid, this.fluidAmount), FluidAction.SIMULATE))
-              .orElse(0);
+    var handler = inv.getStack().getCapability(Capabilities.FluidHandler.ITEM);
+    return handler != null ? handler.fill(new FluidStack(fluid, this.fluidAmount), FluidAction.SIMULATE) : 0;
   }
 
   @Override
@@ -82,26 +82,28 @@ public class ContainerFillingRecipe implements ICastingRecipe, IMultiRecipe<Disp
   public boolean matches(ICastingContainer inv, Level worldIn) {
     ItemStack stack = inv.getStack();
     Fluid fluid = inv.getFluid();
+        var handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
     return stack.getItem() == this.container.asItem()
-           && stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
-                   .filter(handler -> handler.fill(new FluidStack(fluid, this.fluidAmount), FluidAction.SIMULATE) > 0)
-                   .isPresent();
+          && handler != null
+          && handler.fill(new FluidStack(fluid, this.fluidAmount), FluidAction.SIMULATE) > 0;
   }
 
   /** @deprecated use {@link ICastingRecipe#assemble(Container, RegistryAccess)} */
   @Override
   @Deprecated
-  public ItemStack getResultItem(RegistryAccess access) {
+  public ItemStack getResultItem(HolderLookup.Provider access) {
     return new ItemStack(this.container);
   }
 
   @Override
-  public ItemStack assemble(ICastingContainer inv, RegistryAccess access) {
+  public ItemStack assemble(ICastingContainer inv, HolderLookup.Provider access) {
     ItemStack stack = inv.getStack().copy();
-    return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
-      handler.fill(new FluidStack(inv.getFluid(), this.fluidAmount, inv.getFluidTag()), FluidAction.EXECUTE);
+    var handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+    if (handler != null) {
+      handler.fill(new FluidStack(inv.getFluid(), this.fluidAmount), FluidAction.EXECUTE);
       return handler.getContainer();
-    }).orElse(stack);
+    }
+    return stack;
   }
 
   /* Display */
@@ -112,7 +114,7 @@ public class ContainerFillingRecipe implements ICastingRecipe, IMultiRecipe<Disp
   public List<DisplayCastingRecipe> getRecipes(RegistryAccess access) {
     if (displayRecipes == null) {
       List<ItemStack> casts = Collections.singletonList(new ItemStack(container));
-      displayRecipes = ForgeRegistries.FLUIDS.getValues().stream()
+      displayRecipes = BuiltInRegistries.FLUID.stream()
                                              .filter(fluid -> fluid.getBucket() != Items.AIR && fluid.isSource(fluid.defaultFluidState()))
                                              .map(fluid -> {
                                                FluidStack fluidStack = new FluidStack(fluid, fluidAmount);

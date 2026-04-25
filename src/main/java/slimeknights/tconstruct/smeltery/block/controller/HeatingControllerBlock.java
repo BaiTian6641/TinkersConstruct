@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -59,7 +60,7 @@ public abstract class HeatingControllerBlock extends ControllerBlock {
   }
 
   @Override
-  public void appendHoverText(ItemStack stack, @Nullable BlockGetter pLevel, List<Component> tooltip, TooltipFlag pFlag) {
+  public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag pFlag) {
     RetexturedHelper.addTooltip(stack, tooltip);
   }
 
@@ -69,7 +70,6 @@ public abstract class HeatingControllerBlock extends ControllerBlock {
     RetexturedBlock.updateTextureBlock(world, pos, stack);
   }
 
-  @Override
   public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter world, BlockPos pos, Player player) {
     return RetexturedBlock.getPickBlock(world, pos, state);
   }

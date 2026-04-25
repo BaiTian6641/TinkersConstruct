@@ -2,6 +2,7 @@ package slimeknights.tconstruct.library.recipe.modifiers.adding;
 
 import com.google.common.collect.Streams;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -39,11 +40,11 @@ public class MultilevelIncrementalModifierRecipe extends IncrementalModifierReci
   }
 
   @Override
-  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, RegistryAccess access) {
+  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, HolderLookup.Provider access) {
     ToolStack tool = inv.getTinkerable();
 
     // fetch the amount from the modifier, will be 0 if we have a full level
-    ModifierId modifier = result.getId();
+    ModifierId modifier = new ModifierId(result.getId());
     boolean crystal = matchesCrystal(inv);
     boolean isNewLevel = tool.getUpgrades().getEntry(modifier).getAmount(0) <= 0;
 

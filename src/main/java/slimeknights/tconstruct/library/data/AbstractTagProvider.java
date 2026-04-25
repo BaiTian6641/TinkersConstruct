@@ -9,8 +9,9 @@ import net.minecraft.tags.TagBuilder;
 import net.minecraft.tags.TagEntry;
 import net.minecraft.tags.TagFile;
 import net.minecraft.tags.TagKey;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import slimeknights.mantle.data.GenericDataProvider;
+import slimeknights.tconstruct.library.utils.ResourceId;
 
 import java.util.List;
 import java.util.Map;
@@ -119,10 +120,26 @@ public abstract class AbstractTagProvider<T> extends GenericDataProvider {
       return this;
     }
 
+    /** Adds type-safe resource IDs to the tag */
+    public TagAppender<T> add(ResourceId... ids) {
+      for (ResourceId id : ids) {
+        this.internalBuilder.addElement(id.getLocation());
+      }
+      return this;
+    }
+
     /** Adds an optional ID to the tag */
     public TagAppender<T> addOptional(ResourceLocation... ids) {
       for (ResourceLocation id : ids) {
         this.internalBuilder.addOptionalElement(id);
+      }
+      return this;
+    }
+
+    /** Adds optional type-safe resource IDs to the tag */
+    public TagAppender<T> addOptional(ResourceId... ids) {
+      for (ResourceId id : ids) {
+        this.internalBuilder.addOptionalElement(id.getLocation());
       }
       return this;
     }

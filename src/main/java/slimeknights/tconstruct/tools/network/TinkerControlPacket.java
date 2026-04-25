@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import slimeknights.mantle.client.TooltipKey;
 import slimeknights.mantle.network.packet.IThreadsafePacket;
 import slimeknights.tconstruct.shared.TinkerEffects;
@@ -67,8 +67,8 @@ public enum TinkerControlPacket implements IThreadsafePacket {
   }
 
   @Override
-  public void handleThreadsafe(Context context) {
-    ServerPlayer player = context.getSender();
+  public void handleThreadsafe(IPayloadContext context) {
+    ServerPlayer player = context.player() instanceof ServerPlayer serverPlayer ? serverPlayer : null;
     if (player != null) {
       switch (this) {
         case DOUBLE_JUMP -> DoubleJumpHandler.extraJump(player);
@@ -83,3 +83,4 @@ public enum TinkerControlPacket implements IThreadsafePacket {
     }
   }
 }
+

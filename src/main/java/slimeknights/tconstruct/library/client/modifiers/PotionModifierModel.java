@@ -11,7 +11,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.PotionUtils;
+import slimeknights.tconstruct.compat.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.alchemy.Potions;
 import slimeknights.mantle.client.model.util.MantleItemLayerModel;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
@@ -35,6 +35,7 @@ import java.util.function.Function;
 @Accessors(fluent = true)
 @RequiredArgsConstructor
 public class PotionModifierModel implements SimpleModifierModel {
+  private static final ResourceLocation EMPTY_POTION = ResourceLocation.withDefaultNamespace("empty");
   public static final RecordLoadable<PotionModifierModel> LOADER = SimpleModifierModel.loader(PotionModifierModel::new);
   /** @deprecated legacy system, use {@link #LOADER} */
   @Deprecated
@@ -62,20 +63,20 @@ public class PotionModifierModel implements SimpleModifierModel {
   @Override
   public Object getCacheKey(IToolStackView tool, ModifierEntry entry) {
     ModifierId modifier = entry.getId();
-    return new CacheKey(modifier, tool.getPersistentData().getString(modifier));
+    return new CacheKey(modifier, tool.getPersistentData().getString(modifier.getLocation()));
   }
 
   @Override
   public void addQuads(IToolStackView tool, ModifierEntry modifier, Function<Material,TextureAtlasSprite> spriteGetter, Transformation transforms, boolean isLarge, int startTintIndex, Consumer<Collection<BakedQuad>> quadConsumer, @Nullable ItemLayerPixels pixels) {
     Material texture = isLarge ? large : small;
     if (texture != null) {
-      ResourceLocation key = modifier.getId();
+      ResourceLocation key = modifier.getId().getLocation();
       IModDataView toolData = tool.getPersistentData();
       if (toolData.contains(key, Tag.TAG_STRING)) {
         ResourceLocation id = ResourceLocation.tryParse(toolData.getString(key));
         if (id != null) {
-          Potion potion = BuiltInRegistries.POTION.get(id);
-          if (potion != Potions.EMPTY) {
+          if (!id.equals(EMPTY_POTION)) {
+            Potion potion = BuiltInRegistries.POTION.get(id);
             quadConsumer.accept(MantleItemLayerModel.getQuadsForSprite(0xFF000000 | PotionUtils.getColor(potion), -1, spriteGetter.apply(texture), transforms, 0, pixels));
           }
         }

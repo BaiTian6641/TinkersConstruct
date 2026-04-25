@@ -47,7 +47,6 @@ public class SlimesteelBlock extends Block {
     }
   }
 
-  @Override
   public boolean isPathfindable(BlockState state, BlockGetter worldIn, BlockPos pos, PathComputationType type) {
     return false;
   }

@@ -1,18 +1,19 @@
 package slimeknights.tconstruct.tools.modifiers.loot;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializationContext;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.Dynamic;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
-import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.BinomialWithBonusCount;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.Formula;
-import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.FormulaDeserializer;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.OreDrops;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.UniformBonusCount;
 import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunction;
@@ -20,21 +21,30 @@ import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
-import slimeknights.mantle.util.JsonHelper;
 import slimeknights.tconstruct.tools.TinkerModifiers;
 import slimeknights.tconstruct.tools.modifiers.traits.skull.ChrysophiliteModifier;
 
+import java.util.List;
 import java.util.Set;
 
 /** Loot modifier to boost drops based on teh chrysophilite amount */
 public class ChrysophiliteBonusFunction extends LootItemConditionalFunction {
-  public static final Serializer SERIALIZER = new Serializer();
+  private static final ResourceLocation FORMULA_ORE_DROPS = ResourceLocation.withDefaultNamespace("ore_drops");
+  private static final ResourceLocation FORMULA_UNIFORM = ResourceLocation.withDefaultNamespace("uniform_bonus_count");
+  private static final ResourceLocation FORMULA_BINOMIAL = ResourceLocation.withDefaultNamespace("binomial_with_bonus_count");
+  public static final MapCodec<ChrysophiliteBonusFunction> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+    LootItemCondition.DIRECT_CODEC.listOf().optionalFieldOf("conditions", List.of()).forGetter(function -> function.predicates),
+    ResourceLocation.CODEC.fieldOf("formula").forGetter(function -> formulaId(function.formula)),
+    Codec.PASSTHROUGH.optionalFieldOf("parameters", new Dynamic<>(JsonOps.INSTANCE, new JsonObject())).forGetter(function -> new Dynamic<>(JsonOps.INSTANCE, formulaParameters(function.formula))),
+    Codec.BOOL.optionalFieldOf("include_base", true).forGetter(function -> function.includeBase)
+  ).apply(instance, (conditions, formula, parameters, includeBase) ->
+    new ChrysophiliteBonusFunction(conditions, decodeFormula(formula, toJson(parameters)), includeBase)));
 
   /** Formula to apply */
   private final Formula formula;
   /** If true, the includes the helmet in the level, if false level is just gold pieces */
   private final boolean includeBase;
-  protected ChrysophiliteBonusFunction(LootItemCondition[] conditions, Formula formula, boolean includeBase) {
+  protected ChrysophiliteBonusFunction(List<LootItemCondition> conditions, Formula formula, boolean includeBase) {
     super(conditions);
     this.formula = formula;
     this.includeBase = includeBase;
@@ -82,36 +92,45 @@ public class ChrysophiliteBonusFunction extends LootItemConditionalFunction {
     return TinkerModifiers.chrysophiliteBonusFunction.get();
   }
 
-  /** Serializer class */
-  private static class Serializer extends LootItemConditionalFunction.Serializer<ChrysophiliteBonusFunction> {
-    @Override
-    public void serialize(JsonObject json, ChrysophiliteBonusFunction loot, JsonSerializationContext context) {
-      super.serialize(json, loot, context);
-      json.addProperty("formula", loot.formula.getType().toString());
-      JsonObject parameters = new JsonObject();
-      loot.formula.serializeParams(parameters, context);
-      if (parameters.size() > 0) {
-        json.add("parameters", parameters);
-      }
-      json.addProperty("include_base", loot.includeBase);
-    }
+  private static JsonElement toJson(Dynamic<?> dynamic) {
+    return (JsonElement)dynamic.convert(JsonOps.INSTANCE).getValue();
+  }
 
-    @Override
-    public ChrysophiliteBonusFunction deserialize(JsonObject json, JsonDeserializationContext context, LootItemCondition[] conditions) {
-      ResourceLocation id = JsonHelper.getResourceLocation(json, "formula");
-      FormulaDeserializer deserializer = ApplyBonusCount.FORMULAS.get(id);
-      if (deserializer == null) {
-        throw new JsonParseException("Invalid formula id: " + id);
-      }
-      JsonObject parameters;
-      if (json.has("parameters")) {
-        parameters = GsonHelper.getAsJsonObject(json, "parameters");
-      } else {
-        parameters = new JsonObject();
-      }
-      Formula formula = deserializer.deserialize(parameters, context);
-      boolean includeBase = GsonHelper.getAsBoolean(json, "include_base", true);
-      return new ChrysophiliteBonusFunction(conditions, formula, includeBase);
+  private static ResourceLocation formulaId(Formula formula) {
+    if (formula instanceof OreDrops) {
+      return FORMULA_ORE_DROPS;
     }
+    if (formula instanceof UniformBonusCount) {
+      return FORMULA_UNIFORM;
+    }
+    if (formula instanceof BinomialWithBonusCount) {
+      return FORMULA_BINOMIAL;
+    }
+    throw new IllegalArgumentException("Unsupported bonus formula type: " + formula.getClass().getName());
+  }
+
+  private static JsonElement formulaParameters(Formula formula) {
+    JsonObject parameters = new JsonObject();
+    if (formula instanceof UniformBonusCount uniform) {
+      parameters.addProperty("bonusMultiplier", uniform.bonusMultiplier());
+    } else if (formula instanceof BinomialWithBonusCount binomial) {
+      parameters.addProperty("extra", binomial.extraRounds());
+      parameters.addProperty("probability", binomial.probability());
+    }
+    return parameters;
+  }
+
+  private static Formula decodeFormula(ResourceLocation id, JsonElement parametersElement) {
+    JsonObject parameters = parametersElement != null && parametersElement.isJsonObject() ? parametersElement.getAsJsonObject() : new JsonObject();
+    if (FORMULA_ORE_DROPS.equals(id)) {
+      return new OreDrops();
+    }
+    if (FORMULA_UNIFORM.equals(id)) {
+      return new UniformBonusCount(GsonHelper.getAsInt(parameters, "bonusMultiplier"));
+    }
+    if (FORMULA_BINOMIAL.equals(id)) {
+      return new BinomialWithBonusCount(GsonHelper.getAsInt(parameters, "extra"), GsonHelper.getAsFloat(parameters, "probability"));
+    }
+    throw new IllegalArgumentException("Invalid formula id: " + id);
   }
 }

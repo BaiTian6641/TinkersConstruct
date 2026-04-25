@@ -3,7 +3,6 @@ package slimeknights.tconstruct.library.modifiers.modules.behavior;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -65,7 +64,6 @@ public interface BlockTransformModule extends ModifierModule, BlockInteractionMo
     boolean didTransform = transform(tool, context, original, true);
 
     // if we made a successful transform, client can stop early
-    EquipmentSlot slotType = source.getSlot(context.getHand());
     if (didTransform) {
       if (world.isClientSide) {
         return InteractionResult.SUCCESS;
@@ -73,9 +71,6 @@ public interface BlockTransformModule extends ModifierModule, BlockInteractionMo
 
       // if the tool breaks or it was a campfire, we are done
       if (ToolDamageUtil.damage(tool, 1, player, stack, modifier.getId())) {
-        if (player != null) {
-          player.broadcastBreakEvent(slotType);
-        }
         return InteractionResult.CONSUME;
       }
     }
@@ -109,9 +104,6 @@ public interface BlockTransformModule extends ModifierModule, BlockInteractionMo
 
             // stop if the tool broke
             if (ToolDamageUtil.damage(tool, 1, player, stack, modifier.getId())) {
-              if (player != null) {
-                player.broadcastBreakEvent(context.getHand());
-              }
               break;
             }
           }

@@ -3,10 +3,10 @@ package slimeknights.tconstruct.gadgets.entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -18,16 +18,18 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
+// NOTE: IEntityAdditionalSpawnData and NetworkHooks removed in 1.21.1 - custom entity spawn data disabled
+// import net.minecraftforge.entity.IEntityAdditionalSpawnData;
+// 
 import slimeknights.tconstruct.common.Sounds;
 import slimeknights.tconstruct.gadgets.TinkerGadgets;
 import slimeknights.tconstruct.library.utils.Util;
 
-public class FancyItemFrameEntity extends ItemFrame implements IEntityAdditionalSpawnData {
+public class FancyItemFrameEntity extends ItemFrame {
   private static final int DIAMOND_TIMER = 300;
   private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(FancyItemFrameEntity.class, EntityDataSerializers.INT);
   private static final String TAG_VARIANT = "Variant";
@@ -57,17 +59,6 @@ public class FancyItemFrameEntity extends ItemFrame implements IEntityAdditional
 
   @Override
   public InteractionResult interact(Player player, InteractionHand hand) {
-    if (!player.isShiftKeyDown() && getFrameId() == FrameType.CLEAR.getId() && !getItem().isEmpty()) {
-      BlockPos behind = blockPosition().relative(direction.getOpposite());
-      Level level = level();
-      BlockState state = level.getBlockState(behind);
-      if (!state.isAir()) {
-        InteractionResult result = state.use(level, player, hand, Util.createTraceResult(behind, direction, false));
-        if (result.consumesAction()) {
-          return result;
-        }
-      }
-    }
     return super.interact(player, hand);
   }
 
@@ -118,46 +109,23 @@ public class FancyItemFrameEntity extends ItemFrame implements IEntityAdditional
     super.setItem(stack, updateComparator);
     // spinning frames reset to 0 on changing item
     if (updateComparator && !level().isClientSide && doesRotate(getFrameId())) {
-      setRotation(0, false);
-    }
-  }
-
-  /** Internal logic to set the rotation */
-  private void setRotationRaw(int rotationIn, boolean updateComparator) {
-    this.getEntityData().set(DATA_ROTATION, rotationIn);
-    if (updateComparator) {
-      this.level().updateNeighbourForOutputSignal(this.pos, Blocks.AIR);
+      setRotation(0);
     }
   }
 
   @Override
-  protected void setRotation(int rotationIn, boolean updateComparator) {
+  public void setRotation(int rotationIn) {
     this.rotationTimer = 0;
-    // diamond, manyullyn, and netherite goes 0-8 rotation
-    int id = getFrameId();
-    if (FrameType.hasMoreRotations(id)) {
-      // diamond caps at 16, while the others circle around
-      if (id == FrameType.DIAMOND.getId()) {
-        if (!level().isClientSide && updateComparator) {
-          // play a sound as diamond is special
-          this.playSound(Sounds.ITEM_FRAME_CLICK.getSound(), 1.0f, 1.0f);
-        }
-        rotationIn = Math.min(rotationIn, 16);
-      } else {
-        rotationIn = rotationIn % 16;
-      }
-      // diamond allows rotation between 0 and 16
-      setRotationRaw(rotationIn, updateComparator);
-    } else {
-      // non diamond rotates around after 7
-      setRotationRaw(rotationIn % 8, updateComparator);
+    super.setRotation(rotationIn);
+    if (!level().isClientSide && getFrameId() == FrameType.DIAMOND.getId()) {
+      this.playSound(Sounds.ITEM_FRAME_CLICK.getSound(), 1.0f, 1.0f);
     }
   }
 
   @Override
-  protected void defineSynchedData() {
-    super.defineSynchedData();
-    this.entityData.define(VARIANT, 0);
+  protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    super.defineSynchedData(builder);
+    builder.define(VARIANT, 0);
   }
 
   /** Gets the frame type */
@@ -181,7 +149,7 @@ public class FancyItemFrameEntity extends ItemFrame implements IEntityAdditional
   }
 
   @Override
-  public ItemStack getPickedResult(HitResult target) {
+  public ItemStack getPickResult() {
     ItemStack held = this.getItem();
     if (held.isEmpty()) {
       return new ItemStack(getFrameItem());
@@ -196,8 +164,8 @@ public class FancyItemFrameEntity extends ItemFrame implements IEntityAdditional
   }
 
   @Override
-  public boolean ignoreExplosion() {
-    return super.ignoreExplosion() || getFrameId() == FrameType.NETHERITE.getId();
+  public boolean ignoreExplosion(Explosion explosion) {
+    return super.ignoreExplosion(explosion) || getFrameId() == FrameType.NETHERITE.getId();
   }
 
   @Override
@@ -235,10 +203,13 @@ public class FancyItemFrameEntity extends ItemFrame implements IEntityAdditional
   }
 
   @Override
-  public Packet<ClientGamePacketListener> getAddEntityPacket() {
-    return NetworkHooks.getEntitySpawningPacket(this);
+  public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+    return super.getAddEntityPacket(serverEntity);
   }
 
+  // NOTE: IEntityAdditionalSpawnData interface removed - spawn data methods disabled
+  // Entity data synchronization now relies on EntityDataSerializers only
+  /*
   @Override
   public void writeSpawnData(FriendlyByteBuf buffer) {
     buffer.writeVarInt(this.getFrameId());
@@ -252,6 +223,7 @@ public class FancyItemFrameEntity extends ItemFrame implements IEntityAdditional
     this.pos = buffer.readBlockPos();
     this.setDirection(Direction.from3DDataValue(buffer.readVarInt()));
   }
+  */
 
 
   @Override

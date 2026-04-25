@@ -89,7 +89,7 @@ public class ModifierWorktableScreen extends ToolTableScreen<ModifierWorktableBl
     this.imageHeight = 184;
 
     this.tinkerInfo.yOffset = 0;
-    this.modifierInfo.yOffset = this.tinkerInfo.imageHeight + 4;
+    this.modifierInfo.yOffset = this.tinkerInfo.getPanelImageHeight() + 4;
 
     if (addChestSideInventory(playerInventory)) {
       enableArmorStandPreview = false;
@@ -321,18 +321,18 @@ public class ModifierWorktableScreen extends ToolTableScreen<ModifierWorktableBl
   }
 
   @Override
-  public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-    if (this.tinkerInfo.handleMouseScrolled(mouseX, mouseY, delta)
-        || this.modifierInfo.handleMouseScrolled(mouseX, mouseY, delta)) {
+  public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+    if (this.tinkerInfo.handleMouseScrolled(mouseX, mouseY, horizontal, vertical)
+        || this.modifierInfo.handleMouseScrolled(mouseX, mouseY, horizontal, vertical)) {
       return false;
     }
-    if (super.mouseScrolled(mouseX, mouseY, delta)) {
+    if (super.mouseScrolled(mouseX, mouseY, horizontal, vertical)) {
       return true;
     }
 
     if (this.canScroll()) {
       int hidden = this.getHiddenRows();
-      this.sliderProgress = Mth.clamp((float) (this.sliderProgress - delta / hidden), 0, 1);
+      this.sliderProgress = Mth.clamp((float) (this.sliderProgress - vertical / hidden), 0, 1);
       this.modifierIndexOffset = Math.round(this.sliderProgress * hidden) * 4;
       return true;
     }

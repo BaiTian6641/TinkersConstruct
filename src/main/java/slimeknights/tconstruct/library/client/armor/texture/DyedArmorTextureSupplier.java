@@ -22,11 +22,11 @@ import static slimeknights.tconstruct.library.client.armor.texture.FixedArmorTex
  */
 public class DyedArmorTextureSupplier implements ArmorTextureSupplier {
   public static final RecordLoadable<DyedArmorTextureSupplier> LOADER = RecordLoadable.create(
-    Loadables.RESOURCE_LOCATION.requiredField("prefix", s -> s.prefix),
-    StringLoadable.DEFAULT.defaultField("suffix", "", s -> s.suffix),
-    ModifierId.PARSER.defaultField("modifier", TinkerModifiers.dyed.getId(), s -> s.modifier),
-    ColorLoadable.NO_ALPHA.nullableField("default_color", s -> s.alwaysRender ? s.defaultColor : null),
-    IntLoadable.range(0, 15).defaultField("luminosity", 0, false, s -> s.luminosity),
+    Loadables.RESOURCE_LOCATION.requiredField("prefix", (DyedArmorTextureSupplier s) -> s.prefix),
+    StringLoadable.DEFAULT.defaultField("suffix", "", (DyedArmorTextureSupplier s) -> s.suffix),
+    ModifierId.PARSER.defaultField("modifier", new ModifierId(TinkerModifiers.dyed.getId()), (DyedArmorTextureSupplier s) -> s.modifier),
+    ColorLoadable.NO_ALPHA.nullableField("default_color", (DyedArmorTextureSupplier s) -> s.alwaysRender ? s.defaultColor : null),
+    IntLoadable.range(0, 15).defaultField("luminosity", 0, false, (DyedArmorTextureSupplier s) -> s.luminosity),
     DyedArmorTextureSupplier::new);
 
   private final ResourceLocation prefix;
@@ -68,7 +68,7 @@ public class DyedArmorTextureSupplier implements ArmorTextureSupplier {
   public ArmorTexture getArmorTexture(ItemStack stack, TextureType textureType, RegistryAccess access) {
     TintedArmorTexture texture = textures[textureType.ordinal()];
     if (texture != null && (alwaysRender || ModifierUtil.getModifierLevel(stack, modifier) > 0)) {
-      int color = ModifierUtil.getPersistentInt(stack, modifier, defaultColor);
+      int color = ModifierUtil.getPersistentInt(stack, modifier.getLocation(), defaultColor);
       return texture.color(0xFF000000 | color);
     }
     return ArmorTexture.EMPTY;

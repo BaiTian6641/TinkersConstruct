@@ -2,6 +2,7 @@ package slimeknights.tconstruct.library.recipe.modifiers.adding;
 
 import com.google.common.collect.Streams;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -60,7 +61,7 @@ public class MultilevelModifierRecipe extends ModifierRecipe implements IMultiRe
   }
 
   @Override
-  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, RegistryAccess access) {
+  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, HolderLookup.Provider access) {
     ToolStack tool = inv.getTinkerable();
 
     // next few checks depend on the current level to decide
@@ -85,7 +86,7 @@ public class MultilevelModifierRecipe extends ModifierRecipe implements IMultiRe
     }
 
     // add modifier
-    tool.addModifier(result.getId(), 1);
+    tool.addModifier(new ModifierId(result.getId()), 1);
 
     // ensure no modifier problems
     Component toolValidation = tool.tryValidate();

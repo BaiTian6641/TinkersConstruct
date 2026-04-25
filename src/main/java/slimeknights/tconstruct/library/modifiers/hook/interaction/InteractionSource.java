@@ -61,17 +61,17 @@ public enum InteractionSource {
    */
   public static InteractionSource fromEquipmentSlot(EquipmentSlot slot) {
     return switch (slot.getType()) {
-      case ARMOR -> ARMOR;
-      case HAND -> RIGHT_CLICK;
+      case HAND -> InteractionSource.RIGHT_CLICK;
+      case HUMANOID_ARMOR, ANIMAL_ARMOR -> InteractionSource.ARMOR;
     };
   }
 
   /** Adds the format string to the modifier name */
   public static Component formatModifierName(IToolStackView tool, Modifier modifier, Component originalName) {
-    if (ModifierSetWorktableRecipe.isInSet(tool.getPersistentData(), InteractionSource.LEFT_CLICK.getKey(), modifier.getId())) {
+    if (ModifierSetWorktableRecipe.isInSet(tool.getPersistentData(), InteractionSource.LEFT_CLICK.getKey(), modifier.getModifierId())) {
       return modifier.applyStyle(Component.translatable(ATTACK_FORMAT, originalName));
     }
-    if (ModifierSetWorktableRecipe.isInSet(tool.getPersistentData(), InteractionSource.RIGHT_CLICK.getKey(), modifier.getId())) {
+    if (ModifierSetWorktableRecipe.isInSet(tool.getPersistentData(), InteractionSource.RIGHT_CLICK.getKey(), modifier.getModifierId())) {
       return modifier.applyStyle(Component.translatable(INTERACT_FORMAT, originalName));
     }
     return originalName;

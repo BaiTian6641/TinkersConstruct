@@ -102,7 +102,11 @@ public abstract class FluidEffectContext {
 
   /** If true, this context is not allowed to place blocks at the given position */
   public boolean placeRestricted(ItemStack stack) {
-    return player != null && !player.mayBuild() && !stack.hasAdventureModePlaceTagForBlock(level.registryAccess().registryOrThrow(Registries.BLOCK), new BlockInWorld(level, getBlockPos(), false));
+    if (player != null && !player.mayBuild()) {
+      var pred = stack.get(net.minecraft.core.component.DataComponents.CAN_PLACE_ON);
+      return pred == null || !pred.test(new BlockInWorld(level, getBlockPos(), false));
+    }
+    return false;
   }
 
   /** Context for fluid effects targeting an entity */

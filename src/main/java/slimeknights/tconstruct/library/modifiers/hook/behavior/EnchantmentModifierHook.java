@@ -1,6 +1,7 @@
 package slimeknights.tconstruct.library.modifiers.hook.behavior;
 
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
@@ -56,7 +57,13 @@ public interface EnchantmentModifierHook {
    * @return  Enchantment level
    */
   static int getEnchantmentLevel(ItemStack stack, Enchantment enchantment) {
-    int level = EnchantmentHelper.getTagEnchantmentLevel(enchantment, stack);
+    int level = 0;
+    for (var entry : EnchantmentHelper.getEnchantmentsForCrafting(stack).entrySet()) {
+      if (entry.getKey().value() == enchantment) {
+        level = entry.getIntValue();
+        break;
+      }
+    }
     IToolStackView tool = ToolStack.from(stack);
     for (ModifierEntry entry : tool.getModifierList()) {
       level = entry.getHook(ModifierHooks.ENCHANTMENTS).updateEnchantmentLevel(tool, entry, enchantment, level);
@@ -71,7 +78,11 @@ public interface EnchantmentModifierHook {
    * @return  All contained enchantments
    */
   static Map<Enchantment,Integer> getAllEnchantments(ItemStack stack) {
-    Map<Enchantment,Integer> enchantments = EnchantmentHelper.getEnchantments(stack);
+    Map<Enchantment,Integer> enchantments = new java.util.HashMap<>();
+    ItemEnchantments itemEnchantments = EnchantmentHelper.getEnchantmentsForCrafting(stack);
+    for (var entry : itemEnchantments.entrySet()) {
+      enchantments.put(entry.getKey().value(), entry.getIntValue());
+    }
     IToolStackView tool = ToolStack.from(stack);
     for (ModifierEntry entry : tool.getModifierList()) {
       entry.getHook(ModifierHooks.ENCHANTMENTS).updateEnchantments(tool, entry, enchantments);

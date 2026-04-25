@@ -1,19 +1,18 @@
 package slimeknights.tconstruct.common.data.loot;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.loot.LootTableSubProvider;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.entries.LootItem;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import slimeknights.tconstruct.TConstruct;
-import slimeknights.tconstruct.shared.TinkerCommons;
 
 import java.util.function.BiConsumer;
 
+/** Minimal 1.21.1-compatible stub while advancement loot datagen is migrated. */
 public class AdvancementLootTableProvider implements LootTableSubProvider {
+  public AdvancementLootTableProvider(HolderLookup.Provider registries) {
+  }
+
   @Override
-  public void generate(BiConsumer<ResourceLocation, LootTable.Builder> consumer) {
-    consumer.accept(TConstruct.getResource("gameplay/starting_book"), LootTable.lootTable().withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F)).add(LootItem.lootTableItem(TinkerCommons.materialsAndYou))));
+  public void generate(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> consumer) {
   }
 }

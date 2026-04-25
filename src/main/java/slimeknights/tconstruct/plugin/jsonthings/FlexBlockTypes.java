@@ -3,6 +3,8 @@ package slimeknights.tconstruct.plugin.jsonthings;
 import dev.gigaherz.jsonthings.things.IFlexBlock;
 import dev.gigaherz.jsonthings.things.serializers.FlexBlockType;
 import dev.gigaherz.jsonthings.things.serializers.IBlockSerializer;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.effect.MobEffect;
@@ -12,7 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.FlowingFluid;
-import net.minecraftforge.common.util.Lazy;
+import net.neoforged.neoforge.common.util.Lazy;
 import slimeknights.mantle.data.loadable.Loadables;
 import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.plugin.jsonthings.block.FlexBurningLiquidBlock;
@@ -58,7 +60,7 @@ public class FlexBlockTypes {
       int effectLevel = GsonHelper.getAsInt(data, "burn_time");
       return (props, builder) -> {
         final List<Property<?>> _properties = builder.getProperties();
-        Lazy<MobEffect> effect = Lazy.of(() -> Loadables.MOB_EFFECT.fromKey(effectName, "effect"));
+        Lazy<Holder<MobEffect>> effect = Lazy.of(() -> BuiltInRegistries.MOB_EFFECT.wrapAsHolder(Loadables.MOB_EFFECT.fromKey(effectName, "effect")));
         return new FlexMobEffectLiquidBlock(props, builder.getPropertyDefaultValues(), fluidSupplier(Objects.requireNonNullElse(fluidField, builder.getRegistryName())), () -> new MobEffectInstance(effect.get(), 5*20, effectLevel - 1)) {
           @Override
           protected void createBlockStateDefinition(Builder<Block,BlockState> stateBuilder) {

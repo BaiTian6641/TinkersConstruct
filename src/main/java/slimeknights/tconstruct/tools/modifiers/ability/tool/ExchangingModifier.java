@@ -80,7 +80,7 @@ public class ExchangingModifier extends NoLevelsModifier implements RemoveBlockM
     // Note that we check the mined position as the block we are placing 'against', which could be considered variance against vanilla but it is the block that make the most sense here.
     Level world = context.getWorld();
     BlockPos pos = context.getPos();
-    if (entity instanceof Player player && !player.mayBuild() && !fakeStack.hasAdventureModePlaceTagForBlock(BuiltInRegistries.BLOCK, new BlockInWorld(world, pos, false))) {
+    if (entity instanceof Player player && !player.mayBuild()) {
       return null;
     }
 
@@ -107,7 +107,6 @@ public class ExchangingModifier extends NoLevelsModifier implements RemoveBlockM
     // generate placing context
     // use opposite side for hit as that produces better slab placement
     BlockPlaceContext blockUseContext = new BlockPlaceContext(world, player, InteractionHand.OFF_HAND, fakeStack, Util.createTraceResult(pos, context.getSideHit().getOpposite(), true));
-    blockUseContext.replaceClicked = true; // force replacement, even if the position is not replacable (as it most always will be)
 
     // swap the block, it never goes to air so things like torches will remain
     InteractionResult success = blockItem.place(blockUseContext);

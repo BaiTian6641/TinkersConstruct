@@ -78,7 +78,7 @@ public enum ModifierTagSource implements TagSource<Modifier> {
 
   @Override
   public Stream<TagKey<Modifier>> tagsFor(Modifier modifier) {
-    return ModifierManager.getTagKeys(modifier.getId());
+    return ModifierManager.getTagKeys(modifier.getModifierId());
   }
 
   @Override

@@ -2,6 +2,7 @@ package slimeknights.tconstruct.library.modifiers.modules.behavior;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -110,7 +111,7 @@ public record AttributeModule(String unique, Attribute attribute, Operation oper
   private AttributeModifier createModifier(IToolStackView tool, ModifierEntry modifier, EquipmentSlot slot) {
     UUID uuid = getUUID(slot);
     if (uuid != null) {
-      return new AttributeModifier(uuid, unique + "." + slot.getName(), formula.apply(tool, modifier), operation);
+      return new AttributeModifier(ResourceLocation.fromNamespaceAndPath("tconstruct", uuid.toString()), formula.apply(tool, modifier), operation);
     }
     return null;
   }
@@ -130,12 +131,12 @@ public record AttributeModule(String unique, Attribute attribute, Operation oper
   @Override
   public void onEquip(IToolStackView tool, ModifierEntry modifier, EquipmentChangeContext context) {
     if (condition.matches(tool, modifier)) {
-      AttributeInstance instance = context.getEntity().getAttribute(attribute);
+      AttributeInstance instance = context.getEntity().getAttribute(BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute));
       if (instance != null) {
         AttributeModifier attributeModifier = createModifier(tool, modifier, context.getChangedSlot());
         if (attributeModifier != null) {
           // for safety, remove it already there
-          instance.removeModifier(attributeModifier.getId());
+          instance.removeModifier(attributeModifier.id());
           instance.addTransientModifier(attributeModifier);
         }
       }
@@ -147,9 +148,9 @@ public record AttributeModule(String unique, Attribute attribute, Operation oper
     if (condition.matches(tool, modifier)) {
       UUID uuid = getUUID(context.getChangedSlot());
       if (uuid != null) {
-        AttributeInstance instance = context.getEntity().getAttribute(attribute);
+        AttributeInstance instance = context.getEntity().getAttribute(BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute));
         if (instance != null) {
-          instance.removeModifier(uuid);
+          instance.removeModifier(ResourceLocation.fromNamespaceAndPath("tconstruct", uuid.toString()));
         }
       }
     }
@@ -158,7 +159,7 @@ public record AttributeModule(String unique, Attribute attribute, Operation oper
   /** Adds the tooltip for the given attribute */
   public static void addTooltip(Modifier modifier, Attribute attribute, Operation operation, TooltipStyle tooltipStyle, float amount, @Nullable UUID uuid, @Nullable Player player, List<Component> tooltip) {
     switch (tooltipStyle) {
-      case ATTRIBUTE -> TooltipUtil.addAttribute(attribute, operation, amount, uuid, player, tooltip);
+      case ATTRIBUTE -> TooltipUtil.addAttribute(attribute, operation, amount, uuid != null ? ResourceLocation.fromNamespaceAndPath("tconstruct", uuid.toString()) : null, player, tooltip);
       case BOOST -> TooltipModifierHook.addFlatBoost(modifier, Component.translatable(attribute.getDescriptionId()), amount, tooltip);
       case PERCENT -> TooltipModifierHook.addPercentBoost(modifier, Component.translatable(attribute.getDescriptionId()), amount, tooltip);
     }

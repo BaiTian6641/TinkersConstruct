@@ -75,7 +75,7 @@ public class MultiblockStructureData {
     innerX = maxInside.getX() - minInside.getX() + 1;
     innerY = maxInside.getY() - minInside.getY() + 1;
     innerZ = maxInside.getZ() - minInside.getZ() + 1;
-    bounds = new AABB(minInside, maxInside.offset(1, 1, 1));
+    bounds = new AABB(minInside.getX(), minInside.getY(), minInside.getZ(), maxInside.getX() + 1.0D, maxInside.getY() + 1.0D, maxInside.getZ() + 1.0D);
   }
 
   /**

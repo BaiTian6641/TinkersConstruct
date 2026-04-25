@@ -62,8 +62,6 @@ public class TinkerBook extends BookData {
    * Initializes the books
    */
   public static void initBook() {
-    BookLoader.registerGsonTypeAdapter(Component.class, new Component.Serializer());
-
     // register page types
     BookLoader.registerPageType(MeleeHarvestMaterialContent.ID, MeleeHarvestMaterialContent.class);
     BookLoader.registerPageType(RangedMaterialContent.ID,       RangedMaterialContent.class);
@@ -91,7 +89,7 @@ public class TinkerBook extends BookData {
         .thenComparing(hasStatType(StatlessMaterialStats.ARROW_SHAFT)),
       StatlessMaterialStats.ARROW_HEAD.getIdentifier(), StatlessMaterialStats.ARROW_SHAFT.getIdentifier(), StatlessMaterialStats.FLETCHING.getIdentifier());
     TierRangeMaterialSectionTransformer.registerMaterialType(getResource("armor"), ArmorMaterialContent::new,
-      Comparator.comparing(mat -> {
+      Comparator.comparing((slimeknights.tconstruct.library.materials.definition.IMaterial mat) -> {
         // ordering:
         // 1: cuirass exclusive
         // 2: cuirass + maille
@@ -107,13 +105,13 @@ public class TinkerBook extends BookData {
           return registry.getMaterialStats(id, StatlessMaterialStats.MAILLE.getIdentifier()).isPresent() ? 2 : 1;
         }
         // anything with plating goes 4th
-        if (registry.getMaterialStats(id, CHESTPLATE.getId()).isPresent()) {
+        if (registry.getMaterialStats(id, CHESTPLATE.getIdentifier()).isPresent()) {
           return 4;
         }
         // if it has maille, it goes before plating. Otherwise (shield cores), it goes after
         return registry.getMaterialStats(id, StatlessMaterialStats.MAILLE.getIdentifier()).isPresent() ? 3 : 5;
       }),
-      HELMET.getId(), CHESTPLATE.getId(), LEGGINGS.getId(), BOOTS.getId(), SHIELD.getId(),
+      HELMET.getIdentifier(), CHESTPLATE.getIdentifier(), LEGGINGS.getIdentifier(), BOOTS.getIdentifier(), SHIELD.getIdentifier(),
       StatlessMaterialStats.MAILLE.getIdentifier(), StatlessMaterialStats.CUIRASS.getIdentifier(),
       StatlessMaterialStats.SHIELD_CORE.getIdentifier());
     TierRangeMaterialSectionTransformer.registerMaterialType(getResource("skull"), ContentMaterialSkull::new,
@@ -166,7 +164,7 @@ public class TinkerBook extends BookData {
    */
   @SuppressWarnings("removal")
   private static void addStandardData(BookData book, ResourceLocation id, BookTransformer... extraTransformers) {
-    book.addRepository(new FileRepository(new ResourceLocation(id.getNamespace(), "book/" + id.getPath())));
+    book.addRepository(new FileRepository(ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "book/" + id.getPath())));
     book.addTransformer(BookTransformer.indexTranformer());
     book.addTransformer(TierRangeMaterialSectionTransformer.INSTANCE);
 

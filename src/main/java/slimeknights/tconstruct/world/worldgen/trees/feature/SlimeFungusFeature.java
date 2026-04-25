@@ -36,11 +36,6 @@ public class SlimeFungusFeature extends HugeFungusFeature {
     if (!config.planted && pos.getY() + height + 1 >= context.chunkGenerator().getGenDepth()) {
       return false;
     }
-    // actual generation
-    boolean flag = !config.planted && random.nextFloat() < 0.06F;
-    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 4);
-    this.placeStem(level, random, config, pos, height, flag);
-    this.placeHat(level, random, config, pos, height, flag);
-    return true;
+    return super.place(context);
   }
 }

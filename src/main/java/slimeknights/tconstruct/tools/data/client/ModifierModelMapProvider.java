@@ -27,7 +27,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
     tool(TinkerTools.pickaxe).basic(SMALL,
       ModifierIds.diamond, ModifierIds.emerald, ModifierIds.netherite,
       ModifierIds.reinforced, ModifierIds.overforced, ModifierIds.magnetic, ModifierIds.soulbound,
-      ModifierIds.experienced, ModifierIds.luck, TinkerModifiers.severing.getId(), ModifierIds.silky,
+      ModifierIds.experienced, ModifierIds.luck, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.silky,
       ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
       ModifierIds.knockback, ModifierIds.necrotic,
       ModifierIds.blasting, ModifierIds.hydraulic
@@ -51,7 +51,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
     tool(TinkerTools.mattock).basic(SMALL,
         ModifierIds.diamond, ModifierIds.emerald, ModifierIds.netherite,
         ModifierIds.reinforced, ModifierIds.overforced, ModifierIds.magnetic, ModifierIds.soulbound,
-        ModifierIds.experienced, ModifierIds.luck, TinkerModifiers.severing.getId(), ModifierIds.silky,
+        ModifierIds.experienced, ModifierIds.luck, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.silky,
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback, ModifierIds.necrotic,
         ModifierIds.blasting, ModifierIds.hydraulic
@@ -63,7 +63,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
     tool(TinkerTools.handAxe).basic(SMALL,
         ModifierIds.diamond, ModifierIds.emerald, ModifierIds.netherite,
         ModifierIds.reinforced, ModifierIds.overforced, ModifierIds.magnetic, ModifierIds.soulbound,
-        ModifierIds.experienced, ModifierIds.luck, TinkerModifiers.severing.getId(), ModifierIds.silky,
+        ModifierIds.experienced, ModifierIds.luck, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.silky,
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback, ModifierIds.necrotic,
         ModifierIds.blasting, ModifierIds.hydraulic
@@ -75,7 +75,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
     tool(TinkerTools.kama).basic(SMALL,
         ModifierIds.diamond, ModifierIds.emerald, ModifierIds.netherite,
         ModifierIds.reinforced, ModifierIds.overforced, ModifierIds.magnetic, ModifierIds.soulbound,
-        ModifierIds.experienced, ModifierIds.luck, TinkerModifiers.severing.getId(), ModifierIds.silky,
+        ModifierIds.experienced, ModifierIds.luck, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.silky,
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback, ModifierIds.necrotic,
         ModifierIds.blasting, ModifierIds.hydraulic
@@ -100,7 +100,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
     tool(TinkerTools.sword).basic(SMALL,
         ModifierIds.diamond, ModifierIds.emerald, ModifierIds.netherite,
         ModifierIds.reinforced, ModifierIds.overforced, ModifierIds.magnetic, ModifierIds.soulbound,
-        ModifierIds.experienced, ModifierIds.luck, TinkerModifiers.severing.getId(), ModifierIds.silky,
+        ModifierIds.experienced, ModifierIds.luck, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.silky,
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback, ModifierIds.necrotic,
         ModifierIds.blasting, ModifierIds.hydraulic
@@ -118,7 +118,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback,
         ModifierIds.blasting, ModifierIds.hydraulic
-      ).basic(SMALL, ModifierIds.soulbound, TinkerModifiers.severing.getId(), ModifierIds.necrotic)
+      ).basic(SMALL, ModifierIds.soulbound, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.necrotic)
       .fluid(ModifierIds.bucketing, '/').tank('/')
       .luminosity(7, '/', ModifierIds.haste)
       .luminosity(15, '/', ModifierIds.lightspeed)
@@ -144,7 +144,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback,
         ModifierIds.blasting, ModifierIds.hydraulic
-      ).basic(SMALL, ModifierIds.soulbound, TinkerModifiers.severing.getId(), ModifierIds.necrotic)
+      ).basic(SMALL, ModifierIds.soulbound, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.necrotic)
       .fluid(ModifierIds.bucketing, '/').tank('/')
       .luminosity(7, '/', ModifierIds.haste)
       .luminosity(15, '/', ModifierIds.lightspeed)
@@ -158,7 +158,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback,
         ModifierIds.blasting, ModifierIds.hydraulic
-      ).basic(SMALL, ModifierIds.soulbound, TinkerModifiers.severing.getId(), ModifierIds.necrotic)
+      ).basic(SMALL, ModifierIds.soulbound, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.necrotic)
       .fluid(ModifierIds.bucketing, '/').tank('/')
       .luminosity(7, '/', ModifierIds.haste)
       .luminosity(15, '/', ModifierIds.lightspeed)
@@ -172,7 +172,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback,
         ModifierIds.blasting, ModifierIds.hydraulic
-      ).basic(SMALL, ModifierIds.soulbound, TinkerModifiers.severing.getId(), ModifierIds.necrotic)
+      ).basic(SMALL, ModifierIds.soulbound, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.necrotic)
       .fluid(ModifierIds.bucketing, '/').tank('/')
       .luminosity(7, '/', ModifierIds.haste)
       .luminosity(15, '/', ModifierIds.lightspeed)
@@ -187,7 +187,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback,
         ModifierIds.blasting, ModifierIds.hydraulic
-      ).basic(SMALL, ModifierIds.soulbound, TinkerModifiers.severing.getId(), ModifierIds.necrotic)
+      ).basic(SMALL, ModifierIds.soulbound, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.necrotic)
       .fluid(ModifierIds.bucketing, '/').tank('/')
       .luminosity(7, '/', ModifierIds.haste)
       .luminosity(15, '/', ModifierIds.lightspeed)
@@ -211,7 +211,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
     tool(TinkerTools.battlesign).basic(SMALL,
         ModifierIds.diamond, ModifierIds.emerald, ModifierIds.netherite,
         ModifierIds.reinforced, ModifierIds.overforced, ModifierIds.magnetic, ModifierIds.soulbound,
-        ModifierIds.experienced, ModifierIds.luck, TinkerModifiers.severing.getId(), ModifierIds.silky,
+        ModifierIds.experienced, ModifierIds.luck, new ModifierId(TinkerModifiers.severing.getId()), ModifierIds.silky,
         ModifierIds.sharpness, ModifierIds.smite, ModifierIds.antiaquatic, ModifierIds.baneOfSssss, ModifierIds.cooling,
         ModifierIds.knockback, ModifierIds.necrotic,
         ModifierIds.blasting, ModifierIds.hydraulic
@@ -229,7 +229,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
       .luminosity(2, SMALL, ModifierIds.unbreakable);
 
     // plate armor
-    ModifierId dyed = TinkerModifiers.dyed.getId();
+    ModifierId dyed = new ModifierId(TinkerModifiers.dyed.getId());
     for (ArmorItem.Type type : ArmorItem.Type.values()) {
       String root = "armor/plate/" + type.getName() + "/maille";
       String item = "plate/" + type.getName();
@@ -261,7 +261,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
         tool("slime/" + type.getName()).trim(type);
       }
     }
-    tool("slime/wings").modifier(TinkerModifiers.trim.getId(), new TrimModifierModel.Custom(toolMaterial("armor/slime/wings/trim").texture(), null));
+    tool("slime/wings").modifier(new ModifierId(TinkerModifiers.trim.getId()), new TrimModifierModel.Custom(toolMaterial("armor/slime/wings/trim").texture(), null));
 
     // ammo
     tool(TinkerTools.arrow).tipped("ammo/arrow_modifiers/tipped").smashing("ammo/arrow_modifiers/smashing")
@@ -298,7 +298,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
   /** Adds dyed textures for travelers gear */
   private void travelers(String name, @Nullable ArmorItem.Type type) {
     String root = "armor/travelers/" + name + "/modifiers/";
-    ModifierId dyed = TinkerModifiers.dyed.getId();
+    ModifierId dyed = new ModifierId(TinkerModifiers.dyed.getId());
     String item = "travelers/" + name;
     Builder b = tool(item).modifier(dyed, new DyedModifierModel(toolMaterial(root + "dyed"), null));
     if (type != null) {
@@ -312,7 +312,7 @@ public class ModifierModelMapProvider extends AbstractModifierModelMapProvider {
     String staff = "staff/" + name;
     String small = "staff/modifiers/" + name + "/dyed";
     String large = "staff/large_modifiers/" + name + "/dyed";
-    ModifierId dyed = TinkerModifiers.dyed.getId();
+    ModifierId dyed = new ModifierId(TinkerModifiers.dyed.getId());
     tool(staff).modifier(dyed, new DyedModifierModel(toolMaterial(small), toolMaterial(large)));
     tool(staff + "/broken").modifier(dyed, new DyedModifierModel(toolMaterial(small + "_broken"), toolMaterial(large + "_broken")));
     for (int i = 1; i <= 5; i++) {

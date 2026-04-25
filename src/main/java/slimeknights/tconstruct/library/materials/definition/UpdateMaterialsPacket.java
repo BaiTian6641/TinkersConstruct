@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.tags.TagKey;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import slimeknights.mantle.network.packet.IThreadsafePacket;
 import slimeknights.tconstruct.library.materials.MaterialRegistry;
 import slimeknights.tconstruct.library.utils.GenericTagUtil;
@@ -32,7 +32,7 @@ public class UpdateMaterialsPacket implements IThreadsafePacket {
       int sortOrder = buffer.readVarInt();
       boolean craftable = buffer.readBoolean();
       boolean hidden = buffer.readBoolean();
-      materials.put(id, new Material(id, tier, sortOrder, craftable, hidden));
+      materials.put(id, new Material(id.getLocation(), tier, sortOrder, craftable, hidden));
     }
     this.materials = materials.build();
     // process redirects
@@ -52,7 +52,7 @@ public class UpdateMaterialsPacket implements IThreadsafePacket {
   public void encode(FriendlyByteBuf buffer) {
     buffer.writeInt(this.materials.size());
     this.materials.values().forEach(material -> {
-      buffer.writeResourceLocation(material.getIdentifier());
+      buffer.writeResourceLocation(material.getIdentifier().getLocation());
       buffer.writeVarInt(material.getTier());
       buffer.writeVarInt(material.getSortOrder());
       buffer.writeBoolean(material.isCraftable());
@@ -63,11 +63,12 @@ public class UpdateMaterialsPacket implements IThreadsafePacket {
       buffer.writeUtf(key.toString());
       buffer.writeUtf(value.toString());
     });
-    GenericTagUtil.encodeTags(buffer, IMaterial::getIdentifier, this.tags);
+    GenericTagUtil.encodeTags(buffer, material -> material.getIdentifier().getLocation(), this.tags);
   }
 
   @Override
-  public void handleThreadsafe(Context context) {
+  public void handleThreadsafe(IPayloadContext context) {
     MaterialRegistry.updateMaterialsFromServer(this);
   }
 }
+

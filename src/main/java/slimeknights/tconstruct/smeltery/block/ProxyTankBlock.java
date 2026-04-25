@@ -3,8 +3,10 @@ package slimeknights.tconstruct.smeltery.block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -75,9 +77,8 @@ public class ProxyTankBlock extends Block implements EntityBlock {
 
   /* Inventory */
 
-  @Deprecated
   @Override
-  public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+  protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     if (world.getBlockEntity(pos) instanceof ProxyTankBlockEntity tank) {
       boolean clickedTank;
       Direction direction = hit.getDirection();
@@ -98,7 +99,16 @@ public class ProxyTankBlock extends Block implements EntityBlock {
       }
       tank.interact(player, hand, clickedTank);
     }
-    return InteractionResult.SUCCESS;
+    return ItemInteractionResult.sidedSuccess(world.isClientSide);
+  }
+
+  @Override
+  protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+    if (world.getBlockEntity(pos) instanceof ProxyTankBlockEntity tank) {
+      tank.interact(player, InteractionHand.MAIN_HAND, false);
+      return InteractionResult.sidedSuccess(world.isClientSide);
+    }
+    return InteractionResult.PASS;
   }
 
   @Deprecated

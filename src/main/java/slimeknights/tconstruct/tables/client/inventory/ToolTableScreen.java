@@ -3,7 +3,6 @@ package slimeknights.tconstruct.tables.client.inventory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.client.gui.screens.inventory.SmithingScreen;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -16,6 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag.Default;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.joml.Vector3f;
 import org.joml.Quaternionf;
 import slimeknights.mantle.client.SafeClientAccess;
 import slimeknights.tconstruct.TConstruct;
@@ -94,9 +94,9 @@ public abstract class ToolTableScreen<T extends BlockEntity, C extends TabbedCon
    */
   protected void renderArmorStand(GuiGraphics graphics) {
     if (this.armorStandPreview != null) {
-      Quaternionf pose = new Quaternionf();
-      SmithingScreen.ARMOR_STAND_ANGLE.rotateY(this.armorStandAngle, pose);
-      InventoryScreen.renderEntityInInventory(graphics, this.armorStandX, this.armorStandY, this.armorStandScale, pose, null, this.armorStandPreview);
+      Quaternionf bodyRotation = new Quaternionf().rotateY(this.armorStandAngle);
+      Quaternionf cameraRotation = new Quaternionf();
+      InventoryScreen.renderEntityInInventory(graphics, (float)this.armorStandX, (float)this.armorStandY, (float)this.armorStandScale, new Vector3f(), bodyRotation, cameraRotation, this.armorStandPreview);
 
       graphics.blit(ICON_TEXTURE, armorStandX - 16, armorStandY - 16, 0, 184, 32, 32);
     }
@@ -145,7 +145,7 @@ public abstract class ToolTableScreen<T extends BlockEntity, C extends TabbedCon
       ItemStack result = lazyToolStack.getStack();
       tinkerInfo.setCaption(result.getHoverName());
       List<Component> list = new ArrayList<>();
-      result.getItem().appendHoverText(result, Minecraft.getInstance().level, list, Default.NORMAL);
+      result.getItem().appendHoverText(result, Item.TooltipContext.of(player.level()), list, Default.NORMAL);
       tinkerInfo.setText(list);
     }
   }

@@ -2,6 +2,7 @@ package slimeknights.tconstruct.tools.recipe;
 
 import lombok.Getter;
 import net.minecraft.core.Holder.Reference;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -95,7 +96,7 @@ public class ArmorTrimRecipe implements ITinkerStationRecipe, IMultiRecipe<IDisp
   }
 
   @Override
-  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, RegistryAccess access) {
+  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, HolderLookup.Provider access) {
     // first need to find our trim and material instances
     TrimItems trimItems = findInputs(inv);
     // should never happen
@@ -119,7 +120,7 @@ public class ArmorTrimRecipe implements ITinkerStationRecipe, IMultiRecipe<IDisp
     // store into tool NBT
     ToolStack tool = inv.getTinkerable().copy();
     ModDataNBT persistentData = tool.getPersistentData();
-    ModifierId modifier = TinkerModifiers.trim.getId();
+    ModifierId modifier = new ModifierId(TinkerModifiers.trim.getId());
     persistentData.putString(TrimModule.materialKey(modifier), material.key().location().toString());
     if (pattern != null) {
       persistentData.putString(TrimModule.patternKey(modifier), pattern.key().location().toString());
@@ -179,15 +180,15 @@ public class ArmorTrimRecipe implements ITinkerStationRecipe, IMultiRecipe<IDisp
 
     public DisplayRecipe(ResourceLocation id, List<ItemStack> tools, List<ItemStack> trim, Reference<TrimMaterial> holder) {
       this.recipeId = id;
-      TrimMaterial material = holder.get();
+      TrimMaterial material = holder.value();
       toolWithoutModifier = tools;
       this.trim = trim;
-      this.material = List.of(new ItemStack(material.ingredient().get()));
+      this.material = List.of(new ItemStack(material.ingredient().value()));
       this.variant = material.description().plainCopy();
 
       String materialName = holder.key().location().toString();
       List<ModifierEntry> results = List.of(RESULT);
-      ResourceLocation key = TrimModule.materialKey(TinkerModifiers.trim.getId());
+      ResourceLocation key = TrimModule.materialKey(new ModifierId(TinkerModifiers.trim.getId()));
       toolWithModifier = tools.stream().map(stack -> IDisplayModifierRecipe.withModifiers(stack, results, data -> data.putString(key, materialName))).toList();
 
     }

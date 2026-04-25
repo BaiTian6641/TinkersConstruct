@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Tier;
-import net.minecraftforge.common.TierSortingRegistry;
+import slimeknights.tconstruct.compat.neoforge.common.TierSortingRegistry;
 import slimeknights.mantle.util.JsonHelper;
 import slimeknights.mantle.util.RegistryHelper;
 import slimeknights.tconstruct.common.TinkerTags;
@@ -114,7 +114,7 @@ public class ToolTierStat implements IToolStat<Tier> {
 
   @Override
   public Component formatValue(Tier value) {
-    return Component.translatable(Util.makeTranslationKey("tool_stat", getName())).append(HarvestTiers.getName(value));
+    return Component.translatable(Util.makeTranslationKey("tool_stat", getName().getLocation())).append(HarvestTiers.getName(value));
   }
 
   @Override

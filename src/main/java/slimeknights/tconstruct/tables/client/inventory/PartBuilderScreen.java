@@ -90,7 +90,7 @@ public class PartBuilderScreen extends BaseTabbedScreen<PartBuilderBlockEntity,P
 
     this.infoPanelScreen = new PartInfoPanelScreen(this, container, playerInventory, title);
     this.infoPanelScreen.setTextScale(7/9f);
-    this.infoPanelScreen.imageHeight = this.imageHeight;
+    this.infoPanelScreen.setPanelImageHeight(this.imageHeight);
     this.addModule(this.infoPanelScreen);
     addChestSideInventory(playerInventory);
   }
@@ -364,17 +364,17 @@ public class PartBuilderScreen extends BaseTabbedScreen<PartBuilderBlockEntity,P
   }
 
   @Override
-  public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+  public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
     //if (this.infoPanelScreen.handleMouseScrolled(mouseX, mouseY, delta)) {
     //  return false;
     //}
-    if (super.mouseScrolled(mouseX, mouseY, delta)) {
+    if (super.mouseScrolled(mouseX, mouseY, horizontal, vertical)) {
       return true;
     }
 
     if (this.canScroll()) {
       int hidden = this.getHiddenRows();
-      this.sliderProgress = Mth.clamp((float) (this.sliderProgress - delta / hidden), 0, 1);
+      this.sliderProgress = Mth.clamp((float) (this.sliderProgress - vertical / hidden), 0, 1);
       this.recipeIndexOffset = Math.round(this.sliderProgress * hidden) * 4;
       return true;
     }

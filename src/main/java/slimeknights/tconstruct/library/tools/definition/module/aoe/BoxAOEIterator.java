@@ -98,8 +98,8 @@ public record BoxAOEIterator(BoxSize base, List<BoxSize> expansions, IBoxExpansi
     if (extraSize.isZero()) {
       return Collections.emptyList();
     }
-    BlockHitResult hit = context.getHitResult();
-    ExpansionDirections expansion = expansionDirection.getDirections(context.getPlayer(), hit.getDirection());
+    BlockHitResult hit = new BlockHitResult(context.getClickLocation(), context.getClickedFace(), context.getClickedPos(), false);
+    ExpansionDirections expansion = expansionDirection.getDirections(context.getPlayer(), context.getClickedFace());
     Predicate<BlockPos> posPredicate = AreaOfEffectIterator.defaultBlockPredicate(tool, context, matchType);
     return () -> new RectangleIterator(hit.getBlockPos(), expansion.width(), extraSize.width, expansion.height(), extraSize.height, expansion.traverseDown(), expansion.depth(), extraSize.depth, posPredicate);
   }

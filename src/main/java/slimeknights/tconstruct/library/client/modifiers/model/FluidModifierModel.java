@@ -5,15 +5,15 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.BlockElement;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.client.model.QuadTransformers;
-import net.minecraftforge.client.model.SimpleModelState;
-import net.minecraftforge.client.model.geometry.UnbakedGeometryHelper;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.model.QuadTransformers;
+import net.neoforged.neoforge.client.model.SimpleModelState;
+import net.neoforged.neoforge.client.model.geometry.UnbakedGeometryHelper;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.joml.Vector3f;
 import slimeknights.mantle.client.model.util.ColoredBlockModel;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
@@ -52,14 +52,14 @@ public record FluidModifierModel(Material small, @Nullable Material large, ToolT
   }
 
   /** Cache key for {@link #getCacheKey(IToolStackView, ModifierEntry)} */
-  private record CacheKey(Fluid fluid, @Nullable CompoundTag tag) {}
+  private record CacheKey(Fluid fluid, @Nullable DataComponentPatch componentsPatch) {}
 
   @Nullable
   @Override
   public Object getCacheKey(IToolStackView tool, ModifierEntry modifier) {
     FluidStack fluid = tankHelper().getFluid(tool);
     if (!fluid.isEmpty()) {
-      return new CacheKey(fluid.getFluid(), fluid.getTag());
+      return new CacheKey(fluid.getFluid(), fluid.isComponentsPatchEmpty() ? null : fluid.getComponentsPatch());
     }
     return null;
   }
@@ -90,9 +90,9 @@ public record FluidModifierModel(Material small, @Nullable Material large, ToolT
     TextureAtlasSprite fluidSprite = spriteGetter.apply(new Material(InventoryMenu.BLOCK_ATLAS, attributes.getStillTexture(fluid)));
 
     // build fluid like the forge dynamic container model
-    List<BlockElement> unbaked = UnbakedGeometryHelper.createUnbakedItemMaskElements(-1, spriteGetter.apply(template).contents()); // Use template as mask
+    List<BlockElement> unbaked = UnbakedGeometryHelper.createUnbakedItemMaskElements(-1, spriteGetter.apply(template)); // Use template as mask
     // TODO: is there anything that can be done about the fluid? to prevent weird offsets?
-    List<BakedQuad> fluidQuads = UnbakedGeometryHelper.bakeElements(unbaked, mat -> fluidSprite, new SimpleModelState(transforms.applyOrigin(ORIGIN).compose(FluidContainerModel.FLUID_TRANSFORM), false), BAKE_LOCATION); // Bake with fluid texture
+    List<BakedQuad> fluidQuads = UnbakedGeometryHelper.bakeElements(unbaked, mat -> fluidSprite, new SimpleModelState(transforms.applyOrigin(ORIGIN).compose(FluidContainerModel.FLUID_TRANSFORM), false)); // Bake with fluid texture
 
     // apply brightness and color
     int luminosity = fluid.getFluid().getFluidType().getLightLevel(fluid);

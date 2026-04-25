@@ -6,9 +6,9 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -33,6 +33,7 @@ import java.util.Map;
 
 /** Variant of {@link slimeknights.tconstruct.library.modifiers.modules.build.EnchantmentModule} for adding soulspeed with a tooltip. */
 public record SoulSpeedModule(LevelingInt level, ModifierCondition<IToolStackView> condition) implements ModifierModule, TooltipModifierHook, EnchantmentModifierHook, ConditionalModule<IToolStackView> {
+  private static final String SOUL_SPEED_KEY = "enchantment.minecraft.soul_speed";
   private static final List<ModuleHook<?>> DEFAULT_HOOKS = HookProvider.<SoulSpeedModule>defaultHooks(ModifierHooks.ENCHANTMENTS, ModifierHooks.TOOLTIP);
   public static final RecordLoadable<SoulSpeedModule> LOADER = RecordLoadable.create(LevelingInt.LOADABLE.directField(SoulSpeedModule::level), ModifierCondition.TOOL_FIELD, SoulSpeedModule::new);
 
@@ -48,7 +49,7 @@ public record SoulSpeedModule(LevelingInt level, ModifierCondition<IToolStackVie
 
   @Override
   public int updateEnchantmentLevel(IToolStackView tool, ModifierEntry modifier, Enchantment enchantment, int level) {
-    if (enchantment == Enchantments.SOUL_SPEED && condition.matches(tool, modifier)) {
+    if (enchantment.description().getContents() instanceof TranslatableContents contents && SOUL_SPEED_KEY.equals(contents.getKey()) && condition.matches(tool, modifier)) {
       level += this.level.compute(modifier);
     }
     return level;
@@ -57,7 +58,13 @@ public record SoulSpeedModule(LevelingInt level, ModifierCondition<IToolStackVie
   @Override
   public void updateEnchantments(IToolStackView tool, ModifierEntry modifier, Map<Enchantment, Integer> map) {
     if (condition.matches(tool, modifier)) {
-      EnchantmentModifierHook.addEnchantment(map, Enchantments.SOUL_SPEED, this.level.compute(modifier));
+      int amount = this.level.compute(modifier);
+      for (Map.Entry<Enchantment,Integer> entry : map.entrySet()) {
+        if (entry.getKey().description().getContents() instanceof TranslatableContents contents && SOUL_SPEED_KEY.equals(contents.getKey())) {
+          EnchantmentModifierHook.addEnchantment(map, entry.getKey(), amount);
+          break;
+        }
+      }
     }
   }
 

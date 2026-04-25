@@ -31,7 +31,10 @@ import slimeknights.tconstruct.library.utils.TinkerTooltipFlags;
 import slimeknights.tconstruct.library.utils.Util;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Module for banner pattern tooltips */
 public enum BannerModule implements ModifierModule, DisplayNameModifierHook, TooltipModifierHook {
@@ -47,6 +50,8 @@ public enum BannerModule implements ModifierModule, DisplayNameModifierHook, Too
   public static final String KEY_PATTERN = "pattern";
   /** Tooltip key saying hold shift for patterns */
   private static final Component HOLD_SHIFT = TConstruct.makeTranslation("modifier", "banner.hold_shift").withStyle(ChatFormatting.GRAY);
+  /** Mapping of legacy banner hash codes to modern registry IDs. */
+  private static final Map<String,ResourceLocation> LEGACY_PATTERN_IDS = createLegacyPatternIds();
 
   @Override
   public RecordLoadable<? extends ModifierModule> getLoader() {
@@ -77,7 +82,7 @@ public enum BannerModule implements ModifierModule, DisplayNameModifierHook, Too
         for (int i = 0; i < patterns.size(); i++) {
           CompoundTag tag = patterns.getCompound(i);
           DyeColor dye = DyeColor.byId(tag.getInt(KEY_DYE));
-          Holder<BannerPattern> holder = BannerPattern.byHash(tag.getString(KEY_PATTERN));
+          Holder<BannerPattern> holder = getPattern(tag.getString(KEY_PATTERN));
           if (holder != null) {
             // note that Forge is dumb in BannerItem with their patch - mojang already adds the mod ID to the tooltip key
             holder.unwrapKey().ifPresent(key ->
@@ -101,20 +106,32 @@ public enum BannerModule implements ModifierModule, DisplayNameModifierHook, Too
     return modifier.withSuffix("_patterns");
   }
 
+  /** Resolves a stored pattern string to the current banner pattern holder. */
+  @Nullable
+  public static Holder<BannerPattern> getPattern(String pattern) {
+    ResourceLocation id = ResourceLocation.tryParse(pattern);
+    if (id == null) {
+      id = LEGACY_PATTERN_IDS.get(pattern);
+    }
+    return null;
+  }
+
+  /** Gets the normalized set of banner pattern IDs used by the legacy banner importer. */
+  public static Collection<ResourceLocation> getKnownPatternIds() {
+    return LEGACY_PATTERN_IDS.values();
+  }
+
   /** Copies the given list of patterns from banner format to the tool's NBT */
   public static void copyPatterns(ModDataNBT data, ModifierId id, DyeColor dye, ListTag banner) {
     int baseColor = Util.getColor(dye);
     ListTag patterns = new ListTag();
 
     // add in the base pattern, it only exists on shields and we copy from banners
-    BannerPattern base = BuiltInRegistries.BANNER_PATTERN.get(BannerPatterns.BASE);
-    if (base != null) {
-      CompoundTag basePattern = new CompoundTag();
-      basePattern.putString(KEY_PATTERN, base.getHashname());
-      basePattern.putInt(KEY_DYE, dye.getId());
-      basePattern.putInt(KEY_COLOR, baseColor);
-      patterns.add(basePattern);
-    }
+    CompoundTag basePattern = new CompoundTag();
+    basePattern.putString(KEY_PATTERN, BannerPatterns.BASE.location().toString());
+    basePattern.putInt(KEY_DYE, dye.getId());
+    basePattern.putInt(KEY_COLOR, baseColor);
+    patterns.add(basePattern);
 
     // need a cache key, but it's just going to get hashed anyway, so store its hash
     int hashCode = baseColor;
@@ -123,9 +140,16 @@ public enum BannerModule implements ModifierModule, DisplayNameModifierHook, Too
     for (int i = 0; i < banner.size(); i++) {
       CompoundTag original = banner.getCompound(i);
       CompoundTag copy = new CompoundTag();
-      // copy the pattern as is
+      // translate legacy banner hash names to persistent registry IDs
       String pattern = original.getString("Pattern");
-      copy.putString(KEY_PATTERN, pattern);
+      ResourceLocation patternId = LEGACY_PATTERN_IDS.get(pattern);
+      if (patternId == null) {
+        patternId = ResourceLocation.tryParse(pattern);
+      }
+      if (patternId == null) {
+        continue;
+      }
+      copy.putString(KEY_PATTERN, patternId.toString());
       // convert the color from a dye color to an integer
       dye = DyeColor.byId(original.getInt("Color"));
       int color = Util.getColor(dye);
@@ -140,5 +164,54 @@ public enum BannerModule implements ModifierModule, DisplayNameModifierHook, Too
     // add to tool NBT
     data.put(patternKey(id), patterns);
     data.putInt(cacheKey(id), hashCode);
+  }
+
+  /** Builds the mapping from legacy short codes to modern banner pattern IDs. */
+  private static Map<String,ResourceLocation> createLegacyPatternIds() {
+    Map<String,ResourceLocation> ids = new HashMap<>();
+    ids.put("b", BannerPatterns.BASE.location());
+    ids.put("bl", BannerPatterns.SQUARE_BOTTOM_LEFT.location());
+    ids.put("br", BannerPatterns.SQUARE_BOTTOM_RIGHT.location());
+    ids.put("tl", BannerPatterns.SQUARE_TOP_LEFT.location());
+    ids.put("tr", BannerPatterns.SQUARE_TOP_RIGHT.location());
+    ids.put("bs", BannerPatterns.STRIPE_BOTTOM.location());
+    ids.put("ts", BannerPatterns.STRIPE_TOP.location());
+    ids.put("ls", BannerPatterns.STRIPE_LEFT.location());
+    ids.put("rs", BannerPatterns.STRIPE_RIGHT.location());
+    ids.put("cs", BannerPatterns.STRIPE_CENTER.location());
+    ids.put("ms", BannerPatterns.STRIPE_MIDDLE.location());
+    ids.put("drs", BannerPatterns.STRIPE_DOWNRIGHT.location());
+    ids.put("dls", BannerPatterns.STRIPE_DOWNLEFT.location());
+    ids.put("ss", BannerPatterns.STRIPE_SMALL.location());
+    ids.put("cr", BannerPatterns.CROSS.location());
+    ids.put("sc", BannerPatterns.STRAIGHT_CROSS.location());
+    ids.put("bt", BannerPatterns.TRIANGLE_BOTTOM.location());
+    ids.put("tt", BannerPatterns.TRIANGLE_TOP.location());
+    ids.put("bts", BannerPatterns.TRIANGLES_BOTTOM.location());
+    ids.put("tts", BannerPatterns.TRIANGLES_TOP.location());
+    ids.put("ld", BannerPatterns.DIAGONAL_LEFT.location());
+    ids.put("rd", BannerPatterns.DIAGONAL_RIGHT.location());
+    ids.put("lud", BannerPatterns.DIAGONAL_LEFT_MIRROR.location());
+    ids.put("rud", BannerPatterns.DIAGONAL_RIGHT_MIRROR.location());
+    ids.put("mc", BannerPatterns.CIRCLE_MIDDLE.location());
+    ids.put("mr", BannerPatterns.RHOMBUS_MIDDLE.location());
+    ids.put("vh", BannerPatterns.HALF_VERTICAL.location());
+    ids.put("hh", BannerPatterns.HALF_HORIZONTAL.location());
+    ids.put("vhr", BannerPatterns.HALF_VERTICAL_MIRROR.location());
+    ids.put("hhb", BannerPatterns.HALF_HORIZONTAL_MIRROR.location());
+    ids.put("bo", BannerPatterns.BORDER.location());
+    ids.put("cbo", BannerPatterns.CURLY_BORDER.location());
+    ids.put("gra", BannerPatterns.GRADIENT.location());
+    ids.put("gru", BannerPatterns.GRADIENT_UP.location());
+    ids.put("bri", BannerPatterns.BRICKS.location());
+    ids.put("glb", BannerPatterns.GLOBE.location());
+    ids.put("cre", BannerPatterns.CREEPER.location());
+    ids.put("sku", BannerPatterns.SKULL.location());
+    ids.put("flo", BannerPatterns.FLOWER.location());
+    ids.put("moj", BannerPatterns.MOJANG.location());
+    ids.put("pig", BannerPatterns.PIGLIN.location());
+    ids.put("flw", BannerPatterns.FLOW.location());
+    ids.put("gus", BannerPatterns.GUSTER.location());
+    return Map.copyOf(ids);
   }
 }

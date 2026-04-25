@@ -1,15 +1,13 @@
 package slimeknights.tconstruct.library.recipe.tinkerstation.repairing;
 
 import lombok.RequiredArgsConstructor;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
 import slimeknights.mantle.recipe.data.AbstractRecipeBuilder;
 import slimeknights.tconstruct.library.materials.definition.MaterialId;
 import slimeknights.tconstruct.library.materials.stats.MaterialStatsId;
 import slimeknights.tconstruct.library.modifiers.ModifierId;
 import slimeknights.tconstruct.library.modifiers.util.LazyModifier;
-
-import java.util.function.Consumer;
 
 /** @deprecated use {@link slimeknights.tconstruct.library.modifiers.modules.behavior.MaterialRepairModule} */
 @Deprecated(forRemoval = true)
@@ -20,26 +18,26 @@ public class ModifierMaterialRepairRecipeBuilder extends AbstractRecipeBuilder<M
   private final MaterialStatsId statType;
 
   public static ModifierMaterialRepairRecipeBuilder repair(LazyModifier modifier, MaterialId material, MaterialStatsId statType) {
-    return repair(modifier.getId(), material, statType);
+    return repair(modifier.getModifierId(), material, statType);
   }
 
   @Override
-  public void save(Consumer<FinishedRecipe> consumer) {
-    save(consumer, modifier);
+  public void save(RecipeOutput consumer) {
+    save(consumer, modifier.getLocation());
   }
 
   /** Builds the recipe for the crafting table using a repair kit */
   @SuppressWarnings("removal")
-  public ModifierMaterialRepairRecipeBuilder saveCraftingTable(Consumer<FinishedRecipe> consumer, ResourceLocation id) {
-    ResourceLocation advancementId = buildOptionalAdvancement(id, "tinker_station");
-    consumer.accept(new LoadableFinishedRecipe<>(new ModifierMaterialRepairKitRecipe(id, modifier, material, statType), ModifierMaterialRepairKitRecipe.LOADER, advancementId));
+  public ModifierMaterialRepairRecipeBuilder saveCraftingTable(RecipeOutput consumer, ResourceLocation id) {
+    var advancement = buildOptionalAdvancement(id, "tinker_station");
+    consumer.accept(id, new ModifierMaterialRepairKitRecipe(id, modifier, material, statType), advancement);
     return this;
   }
 
   @SuppressWarnings("removal")
   @Override
-  public void save(Consumer<FinishedRecipe> consumer, ResourceLocation id) {
-    ResourceLocation advancementId = buildOptionalAdvancement(id, "tinker_station");
-    consumer.accept(new LoadableFinishedRecipe<>(new ModifierMaterialRepairRecipe(id, modifier, material, statType), ModifierMaterialRepairRecipe.LOADER, advancementId));
+  public void save(RecipeOutput consumer, ResourceLocation id) {
+    var advancement = buildOptionalAdvancement(id, "tinker_station");
+    consumer.accept(id, new ModifierMaterialRepairRecipe(id, modifier, material, statType), advancement);
   }
 }

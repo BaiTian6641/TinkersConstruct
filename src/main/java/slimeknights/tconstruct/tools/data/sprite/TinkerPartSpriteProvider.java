@@ -58,16 +58,16 @@ public class TinkerPartSpriteProvider extends AbstractPartSpriteProvider {
     // items - no loop as each has a unique name
     buildTool("armor/travelers/goggles").disallowAnimated()
       .addBreakablePart("cuirass", StatlessMaterialStats.CUIRASS.getIdentifier())
-      .addBreakablePart("metal", PlatingMaterialStats.HELMET.getId());
+      .addBreakablePart("metal", PlatingMaterialStats.HELMET.getIdentifier());
     buildTool("armor/travelers/vest").disallowAnimated()
       .addBreakablePart("cuirass", StatlessMaterialStats.CUIRASS.getIdentifier())
-      .addBreakablePart("metal", PlatingMaterialStats.CHESTPLATE.getId());
+      .addBreakablePart("metal", PlatingMaterialStats.CHESTPLATE.getIdentifier());
     buildTool("armor/travelers/pants").disallowAnimated()
       .addBreakablePart("cuirass", StatlessMaterialStats.CUIRASS.getIdentifier())
-      .addBreakablePart("metal", PlatingMaterialStats.LEGGINGS.getId());
+      .addBreakablePart("metal", PlatingMaterialStats.LEGGINGS.getIdentifier());
     buildTool("armor/travelers/boots").disallowAnimated()
       .addBreakablePart("cuirass", StatlessMaterialStats.CUIRASS.getIdentifier())
-      .addBreakablePart("metal", PlatingMaterialStats.BOOTS.getId());
+      .addBreakablePart("metal", PlatingMaterialStats.BOOTS.getIdentifier());
     buildTool("armor/travelers/shield")
       .addBreakablePart("cuirass", StatlessMaterialStats.CUIRASS.getIdentifier())
       .addBreakablePart("wood", StatlessMaterialStats.SHIELD_CORE.getIdentifier());
@@ -76,7 +76,7 @@ public class TinkerPartSpriteProvider extends AbstractPartSpriteProvider {
     addPart("maille", StatlessMaterialStats.MAILLE.getIdentifier());
     for (ArmorItem.Type slot : ArmorItem.Type.values()) {
       buildTool("armor/plate/" + slot.getName()).disallowAnimated() // the armor model won't be animated, so don't animate the item
-        .addBreakablePart("plating", PlatingMaterialStats.TYPES.get(slot.ordinal()).getId())
+        .addBreakablePart("plating", PlatingMaterialStats.TYPES.get(slot.ordinal()).getIdentifier())
         .addBreakablePart("maille", StatlessMaterialStats.MAILLE.getIdentifier());
     }
     addTexture("tinker_armor/plate/plating_armor", ARMOR_PLATING).disallowAnimated();
@@ -85,10 +85,10 @@ public class TinkerPartSpriteProvider extends AbstractPartSpriteProvider {
     addTexture("tinker_armor/plate/maille_leggings", ARMOR_MAILLE).disallowAnimated();
     addTexture("tinker_armor/plate/maille_wings", ARMOR_MAILLE).disallowAnimated();
     buildTool("armor/plate/shield")
-      .addBreakablePart("plating", PlatingMaterialStats.SHIELD.getId())
+      .addBreakablePart("plating", PlatingMaterialStats.SHIELD.getIdentifier())
       .addBreakablePart("core", StatlessMaterialStats.SHIELD_CORE.getIdentifier())
       // withLarge wants to use a subfolder, easier to just add another part than special casing
-      .addBreakablePart("plating_large", PlatingMaterialStats.SHIELD.getId())
+      .addBreakablePart("plating_large", PlatingMaterialStats.SHIELD.getIdentifier())
       .addBreakablePart("core_large", StatlessMaterialStats.SHIELD_CORE.getIdentifier());
 
     // staff
@@ -152,10 +152,10 @@ public class TinkerPartSpriteProvider extends AbstractPartSpriteProvider {
       .addArrowHead("axe_head");
 
     // ancient tools
-    buildTool("melting_pan").skipVariants().addBreakablePart("head", PlatingMaterialStats.SHIELD.getId()).addLimb("handle");
+    buildTool("melting_pan").skipVariants().addBreakablePart("head", PlatingMaterialStats.SHIELD.getIdentifier()).addLimb("handle");
     buildTool("war_pick").skipVariants().addHead("limb").addLimb("body")
                          .addBreakableBowstring("bowstring").addBowstring("bowstring_1").addBowstring("bowstring_2").addBowstring("bowstring_3");
-    buildTool("battlesign").skipVariants().addBreakableHead("head").addPart("handle", PlatingMaterialStats.SHIELD.getId());
+    buildTool("battlesign").skipVariants().addBreakableHead("head").addPart("handle", PlatingMaterialStats.SHIELD.getIdentifier());
     buildTool("swasher").skipVariants().addBreakableHead("blade").addHandle("handle")
                         .addGrip("barrel").addGrip("barrel_1").addGrip("barrel_2");
     buildTool("minotaur_axe").skipVariants().addBreakableHead("front").addHead("back");

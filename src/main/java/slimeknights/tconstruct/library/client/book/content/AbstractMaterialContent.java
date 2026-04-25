@@ -11,9 +11,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.ForgeI18n;
-import net.minecraftforge.fluids.FluidStack;
+
+import net.neoforged.neoforge.fluids.FluidStack;
 import slimeknights.mantle.client.book.data.BookData;
 import slimeknights.mantle.client.book.data.content.PageContent;
 import slimeknights.mantle.client.book.data.element.TextComponentData;
@@ -23,7 +24,6 @@ import slimeknights.mantle.client.screen.book.element.BookElement;
 import slimeknights.mantle.client.screen.book.element.ItemElement;
 import slimeknights.mantle.client.screen.book.element.TextComponentElement;
 import slimeknights.mantle.client.screen.book.element.TextElement;
-import slimeknights.mantle.recipe.helper.RecipeHelper;
 import slimeknights.mantle.util.RegistryHelper;
 import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.common.TinkerTags;
@@ -143,9 +143,10 @@ public abstract class AbstractMaterialContent extends PageContent {
       }
       // simply combine all items from all recipes
       MaterialVariantId material = getMaterialVariant();
-      repairStacks = RecipeHelper.getUIRecipes(world.getRecipeManager(), TinkerRecipeTypes.MATERIAL.get(), MaterialRecipe.class, recipe -> material.matchesVariant(recipe.getMaterial()))
-        .stream()
-        // prefer 1 value 1 needed (ingots), then 1 value with higher needed (nuggets), then higher value (blocks)
+      repairStacks = world.getRecipeManager().getRecipes().stream()
+        .map(RecipeHolder::value)
+        .filter(recipe -> recipe instanceof MaterialRecipe materialRecipe && material.matchesVariant(materialRecipe.getMaterial()))
+        .map(recipe -> (MaterialRecipe)recipe)
         .sorted(Comparator.comparing(MaterialRecipe::getValue).thenComparing(MaterialRecipe::getNeeded))
         .flatMap(recipe -> Arrays.stream(recipe.getIngredient().getItems()))
         .collect(Collectors.toList());
@@ -422,7 +423,7 @@ public abstract class AbstractMaterialContent extends PageContent {
     String textKey = getTextKey(materialVariant.getId());
     if (I18n.exists(textKey)) {
       // using forge instead of I18n.format as that prevents % from being interpreted as a format key
-      String translated = ForgeI18n.getPattern(textKey);
+      String translated = I18n.get(textKey);
       if (!detailed) {
         translated = '"' + translated + '"';
       }

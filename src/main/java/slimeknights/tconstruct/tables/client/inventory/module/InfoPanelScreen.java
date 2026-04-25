@@ -90,6 +90,26 @@ public class InfoPanelScreen<P extends MultiModuleScreen<?>, C extends AbstractC
     return (int)Math.ceil(this.font.lineHeight * textScale);
   }
 
+  public int getPanelImageWidth() {
+    return this.imageWidth;
+  }
+
+  public int getPanelImageHeight() {
+    return this.imageHeight;
+  }
+
+  public void setPanelImageHeight(int imageHeight) {
+    this.imageHeight = imageHeight;
+  }
+
+  public int getPanelLeftPos() {
+    return this.leftPos;
+  }
+
+  public int getPanelTopPos() {
+    return this.topPos;
+  }
+
   @Override
   public void updatePosition(int parentX, int parentY, int parentSizeX, int parentSizeY) {
     super.updatePosition(parentX, parentY, parentSizeX, parentSizeY);
@@ -408,12 +428,11 @@ public class InfoPanelScreen<P extends MultiModuleScreen<?>, C extends AbstractC
     return mouseX >= this.slider.xPos && mouseY >= this.slider.yPos && mouseX <= this.slider.xPos + this.slider.width && mouseY <= this.slider.yPos + this.slider.height;
   }
 
-  @Override
-  public boolean handleMouseScrolled(double mouseX, double mouseY, double scrollData) {
+  public boolean handleMouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
     if (!this.slider.isEnabled() || !this.isMouseInModule((int) mouseX, (int) mouseY) || this.isMouseOverFullSlot(mouseX, mouseY)) {
       return false;
     }
 
-    return this.slider.mouseScrolled(scrollData, true);
+    return this.slider.mouseScrolled(vertical, true);
   }
 }

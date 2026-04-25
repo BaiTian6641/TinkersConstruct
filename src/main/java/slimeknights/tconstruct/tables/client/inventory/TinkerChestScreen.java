@@ -21,7 +21,7 @@ public class TinkerChestScreen extends BaseTabbedScreen<AbstractChestBlockEntity
     if (chestContainer != null) {
       this.scalingChestScreen = new ScalingChestScreen<>(this, chestContainer, playerInventory, title);
       // add one extra row to the height
-      this.scalingChestScreen.imageHeight += 18;
+      this.scalingChestScreen.setPanelImageHeight(this.scalingChestScreen.getPanelImageHeight() + 18);
       this.addModule(scalingChestScreen);
     }
   }
@@ -64,16 +64,16 @@ public class TinkerChestScreen extends BaseTabbedScreen<AbstractChestBlockEntity
   }
 
   @Override
-  public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+  public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
     if (this.scalingChestScreen == null) {
       return false;
     }
 
-    if (this.scalingChestScreen.handleMouseScrolled(mouseX, mouseY, delta)) {
+    if (this.scalingChestScreen.handleMouseScrolled(mouseX, mouseY, horizontal, vertical)) {
       return false;
     }
 
-    return super.mouseScrolled(mouseX, mouseY, delta);
+    return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
   }
 
   @Override

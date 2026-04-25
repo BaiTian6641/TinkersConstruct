@@ -2,7 +2,7 @@ package slimeknights.tconstruct.tools.data.material;
 
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.item.DyeColor;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import slimeknights.tconstruct.library.client.data.material.AbstractMaterialRenderInfoProvider;
 import slimeknights.tconstruct.library.client.data.material.AbstractMaterialSpriteProvider;
 import slimeknights.tconstruct.library.materials.definition.IMaterial;
@@ -113,7 +113,7 @@ public class MaterialRenderInfoProvider extends AbstractMaterialRenderInfoProvid
     buildRenderInfo(MaterialIds.ironwood);
     buildRenderInfo(MaterialIds.silver).color(0xDAF3ED).fallbacks("metal");
     buildRenderInfo(MaterialIds.lead).color(0x696579).fallbacks("metal");
-    buildRenderInfo(MaterialIds.whitestoneComposite, MaterialIds.whitestone).color(0xE0E9EC).fallbacks("rock");
+    buildRenderInfo(MaterialIds.whitestoneComposite, MaterialIds.whitestone.getLocation('_')).color(0xE0E9EC).fallbacks("rock");
     buildRenderInfo(MaterialIds.treatedWood);
     // redirect whitestone variants to whitestone composite instead of endstone
     redirect(MaterialIds.whitestoneAluminum, MaterialIds.whitestoneComposite);

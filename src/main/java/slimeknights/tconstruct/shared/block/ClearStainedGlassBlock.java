@@ -1,18 +1,14 @@
 package slimeknights.tconstruct.shared.block;
 
-import net.minecraft.world.level.block.AbstractGlassBlock;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.BeaconBeamBlock;
+import net.minecraft.world.level.block.TransparentBlock;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.util.StringRepresentable;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.LevelReader;
-
-import javax.annotation.Nullable;
 import java.util.Locale;
 
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
-public class ClearStainedGlassBlock extends AbstractGlassBlock {
+public class ClearStainedGlassBlock extends TransparentBlock implements BeaconBeamBlock {
 
   private final GlassColor glassColor;
   public ClearStainedGlassBlock(Properties properties, GlassColor glassColor) {
@@ -20,10 +16,9 @@ public class ClearStainedGlassBlock extends AbstractGlassBlock {
     this.glassColor = glassColor;
   }
 
-  @Nullable
   @Override
-  public float[] getBeaconColorMultiplier(BlockState state, LevelReader world, BlockPos pos, BlockPos beaconPos) {
-    return this.glassColor.getRgb();
+  public DyeColor getColor() {
+    return this.glassColor.getDye();
   }
 
   /** Enum used for registration of this and the pane block */

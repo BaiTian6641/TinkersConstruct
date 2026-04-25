@@ -4,11 +4,13 @@ import com.google.common.collect.ImmutableList;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import slimeknights.tconstruct.library.materials.IMaterialRegistry;
 import slimeknights.tconstruct.library.materials.MaterialRegistry;
 import slimeknights.tconstruct.library.materials.definition.IMaterial;
@@ -87,7 +89,7 @@ public class MaterialIdNBT {
 
     List<MaterialVariantId> materials = listNBT.stream()
       .map(Tag::getAsString)
-      .map(MaterialVariantId::tryParse)
+      .map(value -> MaterialVariantId.tryParse(value))
       .filter(Objects::nonNull)
       .collect(Collectors.toList());
     return new MaterialIdNBT(materials);
@@ -110,7 +112,8 @@ public class MaterialIdNBT {
    * @return  MaterialNBT instance
    */
   public static MaterialIdNBT from(ItemStack stack) {
-    CompoundTag nbt = stack.getTag();
+    CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+    CompoundTag nbt = customData != null ? customData.copyTag() : null;
     if (nbt != null) {
       return readFromNBT(nbt.getList(ToolStack.TAG_MATERIALS, Tag.TAG_STRING));
     }
@@ -119,7 +122,10 @@ public class MaterialIdNBT {
 
   /** Writes this material list to the given stack */
   public ItemStack updateStack(ItemStack stack) {
-    stack.getOrCreateTag().put(ToolStack.TAG_MATERIALS, serializeToNBT());
+    CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+    CompoundTag nbt = customData != null ? customData.copyTag() : new CompoundTag();
+    nbt.put(ToolStack.TAG_MATERIALS, serializeToNBT());
+    stack.set(DataComponents.CUSTOM_DATA, CustomData.of(nbt));
     return stack;
   }
 

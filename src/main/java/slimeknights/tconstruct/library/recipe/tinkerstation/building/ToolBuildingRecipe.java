@@ -3,10 +3,13 @@ package slimeknights.tconstruct.library.recipe.tinkerstation.building;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
@@ -171,7 +174,7 @@ public class ToolBuildingRecipe implements ITinkerStationRecipe {
   }
 
   @Override
-  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, RegistryAccess access) {
+  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, HolderLookup.Provider access) {
     int materialCount = ToolMaterialHook.stats(output.getToolDefinition()).size();
     // fill in materials
     List<MaterialVariant> materials = new ArrayList<>(materialCount);
@@ -211,7 +214,7 @@ public class ToolBuildingRecipe implements ITinkerStationRecipe {
     if (error != null) {
       return RecipeResult.failure(error);
     }
-    return LazyToolStack.success(tool, Math.min(output.asItem().getMaxStackSize(), count));
+    return LazyToolStack.success(tool, Math.min(output.asItem().getDefaultInstance().getMaxStackSize(), count));
   }
 
 
@@ -294,7 +297,9 @@ public class ToolBuildingRecipe implements ITinkerStationRecipe {
           } else {
             // not a full list? mark it for display with just the materials on the end
             result = new MaterialIdNBT(list).updateStack(new ItemStack(output, outputCount));
-            result.getOrCreateTag().putBoolean(TooltipUtil.KEY_DISPLAY, true);
+            CompoundTag displayTag = result.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+            displayTag.putBoolean(TooltipUtil.KEY_DISPLAY, true);
+            result.set(DataComponents.CUSTOM_DATA, CustomData.of(displayTag));
           }
         }
       }
@@ -316,13 +321,13 @@ public class ToolBuildingRecipe implements ITinkerStationRecipe {
 
   @Deprecated
   @Override
-  public ItemStack getResultItem(RegistryAccess access) {
+  public ItemStack getResultItem(HolderLookup.Provider access) {
     return new ItemStack(this.output);
   }
 
   @Deprecated
   @Override
-  public ItemStack assemble(ITinkerStationContainer inv, RegistryAccess access) {
+  public ItemStack assemble(ITinkerStationContainer inv, HolderLookup.Provider access) {
     return getValidatedResult(inv, access).getResult().getStack();
   }
 }

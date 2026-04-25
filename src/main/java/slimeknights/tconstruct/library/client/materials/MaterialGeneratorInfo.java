@@ -2,10 +2,11 @@ package slimeknights.tconstruct.library.client.materials;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.resources.ResourceLocation;
-import slimeknights.mantle.data.gson.ResourceLocationSerializer;
 import slimeknights.mantle.data.loadable.common.GsonLoadable;
 import slimeknights.mantle.data.loadable.field.LegacyField;
 import slimeknights.mantle.data.loadable.primitive.BooleanLoadable;
@@ -25,7 +26,14 @@ public class MaterialGeneratorInfo {
   /** GSON adapter for generator deserializing. TODO: migrate ISpriteTransformer to loadables? */
   private static final Gson GSON = (new GsonBuilder())
     .registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
-    .registerTypeAdapter(MaterialStatsId.class, new ResourceLocationSerializer<>(MaterialStatsId::new, TConstruct.MOD_ID))
+    .registerTypeAdapter(MaterialStatsId.class, (com.google.gson.JsonSerializer<MaterialStatsId>)(src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
+    .registerTypeAdapter(MaterialStatsId.class, (com.google.gson.JsonDeserializer<MaterialStatsId>)(json, typeOfT, context) -> {
+      MaterialStatsId id = MaterialStatsId.PARSER.tryParse(json.getAsString());
+      if (id == null) {
+        throw new com.google.gson.JsonParseException("Invalid material stat ID: " + json.getAsString());
+      }
+      return id;
+    })
     .registerTypeHierarchyAdapter(ISpriteTransformer.class, ISpriteTransformer.SERIALIZER)
     .registerTypeHierarchyAdapter(IColorMapping.class, IColorMapping.SERIALIZER)
     .create();

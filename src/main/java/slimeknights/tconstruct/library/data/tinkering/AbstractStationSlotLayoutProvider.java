@@ -1,14 +1,14 @@
 package slimeknights.tconstruct.library.data.tinkering;
 
 import com.google.gson.JsonObject;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.PackOutput.Target;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.neoforged.neoforge.common.conditions.ICondition;
 import slimeknights.mantle.data.GenericDataProvider;
 import slimeknights.tconstruct.library.recipe.partbuilder.Pattern;
 import slimeknights.tconstruct.library.tools.item.IModifiableDisplay;
@@ -71,7 +71,7 @@ public abstract class AbstractStationSlotLayoutProvider extends GenericDataProvi
 
   /** Defines the given ID as a general layout */
   protected StationSlotLayout.Builder definePattern(Pattern id) {
-    return define(id).icon(id);
+    return define(id.getLocation()).icon(id);
   }
 
   /** Defines the given ID as a tool layout, sets icon and name */
@@ -102,7 +102,7 @@ public abstract class AbstractStationSlotLayoutProvider extends GenericDataProvi
     public JsonObject serialize() {
       JsonObject json = StationSlotLayoutLoader.GSON.toJsonTree(builder.build()).getAsJsonObject();
       if (!conditions.isEmpty()) {
-        json.add("conditions", CraftingHelper.serialize(conditions.toArray(ICondition[]::new)));
+        json.add("conditions", ICondition.LIST_CODEC.encodeStart(JsonOps.INSTANCE, conditions).getOrThrow(IllegalStateException::new));
       }
       return json;
     }

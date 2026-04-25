@@ -5,7 +5,7 @@ import mezz.jei.api.ingredients.subtypes.UidContext;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.PotionUtils;
+import slimeknights.tconstruct.compat.minecraft.world.item.alchemy.PotionUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;

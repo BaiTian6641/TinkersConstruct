@@ -1,11 +1,13 @@
 package slimeknights.tconstruct.tools.recipe;
 
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.component.CustomData;
+import slimeknights.tconstruct.compat.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import slimeknights.mantle.data.loadable.common.IngredientLoadable;
@@ -50,7 +52,7 @@ public class TippedToolTransformRecipe extends ToolBuildingRecipe {
   }
 
   @Override
-  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, RegistryAccess access) {
+  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, HolderLookup.Provider access) {
     RecipeResult<LazyToolStack> result = super.getValidatedResult(inv, access);
     if (result.isSuccess()) {
       // tool must have modifier, else we are adding bad data
@@ -66,9 +68,9 @@ public class TippedToolTransformRecipe extends ToolBuildingRecipe {
         }
         // if we found one, set its NBT into the result tool
         if (!stack.isEmpty()) {
-          CompoundTag tag = stack.getTag();
+          CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
           if (tag != null && tag.contains(PotionUtils.TAG_POTION, Tag.TAG_STRING)) {
-            tool.getPersistentData().putString(modifier, tag.getString(PotionUtils.TAG_POTION));
+            tool.getPersistentData().putString(modifier.getLocation(), tag.getString(PotionUtils.TAG_POTION));
           }
         }
       }
@@ -82,10 +84,10 @@ public class TippedToolTransformRecipe extends ToolBuildingRecipe {
       ItemStack result = super.getDisplayOutput().get(0);
       displayOutput = Arrays.stream(ingredients.get(0).getItems())
         .map(stack -> {
-          CompoundTag tag = stack.getTag();
+          CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
           if (tag != null) {
             ItemStack copy = result.copy();
-            ToolStack.from(copy).getPersistentData().putString(modifier, tag.getString(PotionUtils.TAG_POTION));
+            ToolStack.from(copy).getPersistentData().putString(modifier.getLocation(), tag.getString(PotionUtils.TAG_POTION));
             return copy;
           }
           return result;

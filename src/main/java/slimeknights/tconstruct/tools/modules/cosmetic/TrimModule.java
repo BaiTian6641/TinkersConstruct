@@ -79,7 +79,7 @@ public class TrimModule implements ModifierModule, DisplayNameModifierHook, Modi
   @Nullable
   @Override
   public Component onRemoved(IToolStackView tool, Modifier modifier) {
-    ModifierId id = modifier.getId();
+    ModifierId id = modifier.getModifierId();
     tool.getPersistentData().remove(patternKey(id));
     tool.getPersistentData().remove(materialKey(id));
     return null;

@@ -12,11 +12,10 @@ import com.google.gson.JsonSyntaxException;
 import io.netty.handler.codec.DecoderException;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.crafting.CraftingHelper;
 import slimeknights.mantle.util.JsonHelper;
 import slimeknights.tconstruct.library.recipe.partbuilder.Pattern;
 
@@ -66,7 +65,7 @@ public abstract class LayoutIcon {
     switch (type) {
       case EMPTY: return EMPTY;
       case ITEM: {
-        ItemStack stack = buffer.readItem();
+        ItemStack stack = ItemStack.OPTIONAL_STREAM_CODEC.decode((RegistryFriendlyByteBuf) buffer);
         return new ItemStackIcon(stack);
       }
       case PATTERN: {
@@ -100,17 +99,13 @@ public abstract class LayoutIcon {
     @Override
     public void write(FriendlyByteBuf buffer) {
       buffer.writeEnum(Type.ITEM);
-      buffer.writeItem(stack);
+      ItemStack.OPTIONAL_STREAM_CODEC.encode((RegistryFriendlyByteBuf) buffer, stack);
     }
 
     @Override
     public JsonObject toJson() {
       JsonObject json = new JsonObject();
       json.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-      CompoundTag tag = stack.getTag();
-      if (tag != null) {
-        json.addProperty("nbt", tag.toString());
-      }
       return json;
     }
   }
@@ -132,7 +127,7 @@ public abstract class LayoutIcon {
     @Override
     public void write(FriendlyByteBuf buffer) {
       buffer.writeEnum(Type.PATTERN);
-      buffer.writeResourceLocation(pattern);
+      buffer.writeResourceLocation(pattern.getLocation());
     }
 
     @Override
@@ -160,7 +155,9 @@ public abstract class LayoutIcon {
         return new PatternIcon(pattern);
       }
       if (object.has("item")) {
-        ItemStack stack = CraftingHelper.getItemStack(object, true);
+        ItemStack stack = BuiltInRegistries.ITEM.getOptional(JsonHelper.getResourceLocation(object, "item"))
+          .map(ItemStack::new)
+          .orElseThrow(() -> new JsonSyntaxException("Unknown item for layout icon"));
         return new ItemStackIcon(stack);
       }
       // not sure why this would be needed, but might as well

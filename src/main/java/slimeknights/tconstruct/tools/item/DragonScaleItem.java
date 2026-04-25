@@ -10,7 +10,6 @@ public class DragonScaleItem extends TooltipItem {
     super(properties);
   }
 
-  @Override
   public boolean canBeHurtBy(DamageSource damageSource) {
     return !damageSource.is(DamageTypeTags.IS_EXPLOSION);
   }

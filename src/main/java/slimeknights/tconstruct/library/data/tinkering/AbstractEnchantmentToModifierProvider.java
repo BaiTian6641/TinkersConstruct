@@ -1,8 +1,8 @@
 package slimeknights.tconstruct.library.data.tinkering;
 
 import com.google.gson.JsonObject;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.PackOutput.Target;
@@ -13,7 +13,6 @@ import slimeknights.mantle.data.GenericDataProvider;
 import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.library.modifiers.ModifierId;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /** Data generator for mappings from enchantments to modifiers */
@@ -38,18 +37,18 @@ public abstract class AbstractEnchantmentToModifierProvider extends GenericDataP
   /* Helpers */
 
   /** Helper to append the ? for optional modifiers */
-  private static String optionalId(ResourceLocation modifierId, boolean optional) {
+  private static String optionalId(ModifierId modifierId, boolean optional) {
     return optional ? modifierId.toString() + '?' : modifierId.toString();
   }
 
   /** Adds the given enchantment */
-  protected void add(Enchantment enchantment, ModifierId modifierId) {
+  protected void add(ResourceKey<Enchantment> enchantment, ModifierId modifierId) {
     add(enchantment, modifierId, false);
   }
 
   /** Adds the given enchantment, allowing making the modifier optional */
-  protected void add(Enchantment enchantment, ModifierId modifierId, boolean optionalModifier) {
-    String key = Objects.requireNonNull(BuiltInRegistries.ENCHANTMENT.getKey(enchantment)).toString();
+  protected void add(ResourceKey<Enchantment> enchantment, ModifierId modifierId, boolean optionalModifier) {
+    String key = enchantment.location().toString();
     if (enchantmentMap.has(key) || enchantmentMap.has(key + '?')) {
       throw new IllegalArgumentException("Duplicate enchantment " + key);
     }

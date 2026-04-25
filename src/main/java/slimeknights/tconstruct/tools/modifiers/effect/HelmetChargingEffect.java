@@ -4,7 +4,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.MobEffectTextureManager;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -12,15 +14,13 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
 import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.library.modifiers.hook.interaction.GeneralInteractionModifierHook;
 import slimeknights.tconstruct.library.tools.helper.ModifierUtil;
 import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
 import slimeknights.tconstruct.tools.TinkerModifiers;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 /** Effect for rendering the charge up when you start using a helmet */
@@ -30,14 +30,10 @@ public class HelmetChargingEffect extends MobEffect {
   }
 
   @Override
-  public List<ItemStack> getCurativeItems() {
-    return new ArrayList<>();
-  }
-
-  @Override
   public void initializeClient(Consumer<IClientMobEffectExtensions> consumer) {
     consumer.accept(new IClientMobEffectExtensions() {
       private static final ResourceLocation BAR_KEY = TConstruct.getResource("helmet_charging_bar");
+      private static final ResourceLocation MOB_EFFECT_ATLAS = ResourceLocation.withDefaultNamespace("textures/atlas/mob_effects.png");
       private final Minecraft mc = Minecraft.getInstance();
 
       @Override
@@ -61,7 +57,8 @@ public class HelmetChargingEffect extends MobEffect {
             int drawtime = ModifierUtil.getPersistentInt(helmet, GeneralInteractionModifierHook.KEY_DRAWTIME, 0);
             int dd = drawtime + 20;
             if (drawtime > 0 && duration < dd) {
-              sprite = textures.getSprite(BAR_KEY);
+              ModelManager modelManager = mc.getModelManager();
+              sprite = modelManager.getAtlas(MOB_EFFECT_ATLAS).getSprite(BAR_KEY);
               int height;
               if (duration < 20) {
                 height = 18;
@@ -70,7 +67,7 @@ public class HelmetChargingEffect extends MobEffect {
               }
               float v0 = sprite.getV0(), v1 = sprite.getV1();
               int yOffset = (18 - height);
-              graphics.innerBlit(sprite.atlasLocation(), x + 3, x + 21, y + 3 + yOffset, y + 21, 0, sprite.getU0(), sprite.getU1(), v0 + (v1 - v0) * yOffset / 18f, v1);
+              graphics.blit(x + 3, y + 3 + yOffset, 0, 18, height, sprite, sprite.getU0(), sprite.getU1(), v0 + (v1 - v0) * yOffset / 18f, v1);
             }
           }
         }
@@ -85,7 +82,7 @@ public class HelmetChargingEffect extends MobEffect {
   /** Starts using the helmet with the charge time rendering */
   public static int startUsingHelmet(IToolStackView tool, LivingEntity living, float speedFactor) {
     int time = GeneralInteractionModifierHook.startDrawing(tool, living, speedFactor);
-    living.addEffect(new MobEffectInstance(TinkerModifiers.helmetCharging.get(), time + 20, 0, true, false, true));
+    living.addEffect(new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(TinkerModifiers.helmetCharging.get()), time + 20, 0, true, false, true));
     return time;
   }
 }

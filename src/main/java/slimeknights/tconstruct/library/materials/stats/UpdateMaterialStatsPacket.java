@@ -3,7 +3,7 @@ package slimeknights.tconstruct.library.materials.stats;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.apache.logging.log4j.Logger;
 import slimeknights.mantle.data.loadable.Loadable;
 import slimeknights.mantle.network.packet.IThreadsafePacket;
@@ -52,7 +52,7 @@ public class UpdateMaterialStatsPacket implements IThreadsafePacket {
   public void encode(FriendlyByteBuf buffer) {
     buffer.writeInt(materialToStats.size());
     materialToStats.forEach((materialId, stats) -> {
-      buffer.writeResourceLocation(materialId);
+      buffer.writeResourceLocation(materialId.getLocation());
       buffer.writeInt(stats.size());
       stats.forEach(stat -> encodeStat(buffer, stat, stat.getType()));
     });
@@ -65,12 +65,13 @@ public class UpdateMaterialStatsPacket implements IThreadsafePacket {
    */
   @SuppressWarnings("unchecked")
   private <T extends IMaterialStats> void encodeStat(FriendlyByteBuf buffer, IMaterialStats stat, MaterialStatType<T> type) {
-    MaterialStatsId.PARSER.encode(buffer, type.getId());
+    MaterialStatsId.PARSER.encode(buffer, type.getIdentifier());
     type.getLoadable().encode(buffer, (T) stat);
   }
 
   @Override
-  public void handleThreadsafe(Context context) {
+  public void handleThreadsafe(IPayloadContext context) {
     MaterialRegistry.updateMaterialStatsFromServer(this);
   }
 }
+

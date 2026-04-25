@@ -1,6 +1,6 @@
 package slimeknights.tconstruct.common;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.HolderSet.Named;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleType;
@@ -22,14 +22,14 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
+import net.neoforged.neoforge.common.crafting.IngredientType;
 import net.minecraft.world.level.storage.loot.entries.LootPoolEntryType;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
-import net.minecraftforge.common.loot.IGlobalLootModifier;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.ForgeRegistries.Keys;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.registries.NeoForgeRegistries.Keys;
 import slimeknights.mantle.item.BlockTooltipItem;
 import slimeknights.mantle.item.TooltipItem;
 import slimeknights.mantle.registration.deferred.BlockEntityTypeDeferredRegister;
@@ -66,7 +66,7 @@ public abstract class TinkerModule {
   protected static final ItemDeferredRegisterExtension ITEMS = new ItemDeferredRegisterExtension(TConstruct.MOD_ID);
   protected static final FluidDeferredRegisterExtension FLUIDS = new FluidDeferredRegisterExtension(TConstruct.MOD_ID);
   protected static final EnumDeferredRegister<MobEffect> MOB_EFFECTS = new EnumDeferredRegister<>(Registries.MOB_EFFECT, TConstruct.MOD_ID);
-  protected static final SynchronizedDeferredRegister<ParticleType<?>> PARTICLE_TYPES = SynchronizedDeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, TConstruct.MOD_ID);
+  protected static final SynchronizedDeferredRegister<ParticleType<?>> PARTICLE_TYPES = SynchronizedDeferredRegister.create(Registries.PARTICLE_TYPE, TConstruct.MOD_ID);
   protected static final SynchronizedDeferredRegister<EntityDataSerializer<?>> DATA_SERIALIZERS = SynchronizedDeferredRegister.create(Keys.ENTITY_DATA_SERIALIZERS, TConstruct.MOD_ID);
   protected static final SynchronizedDeferredRegister<CreativeModeTab> CREATIVE_TABS = SynchronizedDeferredRegister.create(Registries.CREATIVE_MODE_TAB, TConstruct.MOD_ID);
   // gameplay instances
@@ -74,10 +74,11 @@ public abstract class TinkerModule {
   protected static final EntityTypeDeferredRegister ENTITIES = new EntityTypeDeferredRegister(TConstruct.MOD_ID);
   protected static final MenuTypeDeferredRegister MENUS = new MenuTypeDeferredRegister(TConstruct.MOD_ID);
   // datapacks
-  protected static final SynchronizedDeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = SynchronizedDeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, TConstruct.MOD_ID);
-  protected static final SynchronizedDeferredRegister<Codec<? extends IGlobalLootModifier>> GLOBAL_LOOT_MODIFIERS = SynchronizedDeferredRegister.create(Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, TConstruct.MOD_ID);
+  protected static final SynchronizedDeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = SynchronizedDeferredRegister.create(Registries.RECIPE_SERIALIZER, TConstruct.MOD_ID);
+  protected static final SynchronizedDeferredRegister<IngredientType<?>> INGREDIENT_TYPES = SynchronizedDeferredRegister.create(Keys.INGREDIENT_TYPES, TConstruct.MOD_ID);
+  protected static final SynchronizedDeferredRegister<MapCodec<? extends IGlobalLootModifier>> GLOBAL_LOOT_MODIFIERS = SynchronizedDeferredRegister.create(Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, TConstruct.MOD_ID);
   protected static final SynchronizedDeferredRegister<LootItemConditionType> LOOT_CONDITIONS = SynchronizedDeferredRegister.create(Registries.LOOT_CONDITION_TYPE, TConstruct.MOD_ID);
-  protected static final SynchronizedDeferredRegister<LootItemFunctionType> LOOT_FUNCTIONS = SynchronizedDeferredRegister.create(Registries.LOOT_FUNCTION_TYPE, TConstruct.MOD_ID);
+  protected static final SynchronizedDeferredRegister<LootItemFunctionType<?>> LOOT_FUNCTIONS = SynchronizedDeferredRegister.create(Registries.LOOT_FUNCTION_TYPE, TConstruct.MOD_ID);
   protected static final SynchronizedDeferredRegister<LootPoolEntryType> LOOT_ENTRIES = SynchronizedDeferredRegister.create(Registries.LOOT_POOL_ENTRY_TYPE, TConstruct.MOD_ID);
 
   // base item properties
@@ -89,8 +90,12 @@ public abstract class TinkerModule {
   protected static final Supplier<Item> TOOLTIP_ITEM = () -> new TooltipItem(ITEM_PROPS);
 
   /** Called during construction to initialize the registers for this mod */
-  public static void initRegisters() {
-    IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
+  /** Shared access to the mod event bus, stored during initRegisters for sub-modules */
+  public static IEventBus MOD_BUS;
+
+  /** Called during construction to initialize the registers for this mod */
+  public static void initRegisters(IEventBus bus) {
+    MOD_BUS = bus;
     // gameplay singleton
     BLOCKS.register(bus);
     ITEMS.register(bus);
@@ -105,6 +110,7 @@ public abstract class TinkerModule {
     MENUS.register(bus);
     // datapacks
     RECIPE_SERIALIZERS.register(bus);
+    INGREDIENT_TYPES.register(bus);
     GLOBAL_LOOT_MODIFIERS.register(bus);
     LOOT_CONDITIONS.register(bus);
     LOOT_FUNCTIONS.register(bus);
@@ -136,8 +142,10 @@ public abstract class TinkerModule {
   protected static BlockBehaviour.Properties glassBuilder(MapColor color) {
     return builder(color, SoundType.GLASS)
       .instrument(NoteBlockInstrument.HAT)
-      .strength(0.3F).noOcclusion().isValidSpawn(Blocks::never)
-      .isRedstoneConductor(Blocks::never).isSuffocating(Blocks::never).isViewBlocking(Blocks::never);
+      .strength(0.3F).noOcclusion().isValidSpawn((state, level, pos, entityType) -> false)
+      .isRedstoneConductor((state, level, pos) -> false)
+      .isSuffocating((state, level, pos) -> false)
+      .isViewBlocking((state, level, pos) -> false);
   }
 
   /** Builder that pre-supplies glass properties */

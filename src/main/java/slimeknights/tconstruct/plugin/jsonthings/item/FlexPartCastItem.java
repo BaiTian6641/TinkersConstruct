@@ -23,7 +23,6 @@ public class FlexPartCastItem extends FlexItem {
     this.part = part;
   }
 
-  @Override
   public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
     int cost = MaterialCastingLookup.getItemCost(part.get());
     if (cost > 0) {

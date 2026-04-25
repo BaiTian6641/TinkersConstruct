@@ -1,21 +1,22 @@
 package slimeknights.tconstruct.tables.recipe;
 
-import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 import slimeknights.mantle.data.loadable.Loadables;
 import slimeknights.mantle.data.loadable.common.IngredientLoadable;
 import slimeknights.mantle.data.loadable.field.ContextKey;
@@ -43,6 +44,7 @@ import slimeknights.tconstruct.library.tools.nbt.ToolStack;
 import slimeknights.tconstruct.library.tools.part.IMaterialItem;
 import slimeknights.tconstruct.library.tools.stat.ToolStats;
 import slimeknights.tconstruct.tables.TinkerTables;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -128,7 +130,7 @@ public class PartBuilderToolRecycle implements IPartBuilderRecipe, IMultiRecipe<
   }
 
   @Override
-  public ItemStack assemble(IPartBuilderContainer inv, RegistryAccess access, Pattern pattern) {
+  public ItemStack assemble(IPartBuilderContainer inv, HolderLookup.Provider access, Pattern pattern) {
     ToolStack tool = ToolStack.from(inv.getStack());
     // find our parts list, either set or override
     ToolDefinition definition = tool.getDefinition();
@@ -205,7 +207,7 @@ public class PartBuilderToolRecycle implements IPartBuilderRecipe, IMultiRecipe<
   /** @deprecated use {@link IPartBuilderRecipe#assemble(IPartBuilderContainer, RegistryAccess, Pattern)} */
   @Deprecated
   @Override
-  public ItemStack getResultItem(RegistryAccess access) {
+  public ItemStack getResultItem(HolderLookup.Provider access) {
     return ItemStack.EMPTY;
   }
 
@@ -236,7 +238,9 @@ public class PartBuilderToolRecycle implements IPartBuilderRecipe, IMultiRecipe<
     Collection<PartIndex> displayParts = IntStream.range(0, parts.size()).mapToObj(i -> new PartIndex(parts.get(i), i)).collect(Collectors.toMap(PartIndex::part, Function.identity(), (a, b) -> a)).values();
     return displayParts.stream().map(pi -> {
       ItemStack part = pi.part.withMaterialForDisplay(ToolBuildHandler.getRenderMaterial(pi.index));
-      part.getOrCreateTag().putBoolean(TooltipUtil.KEY_DISPLAY, true);
+      CompoundTag displayTag = part.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+      displayTag.putBoolean(TooltipUtil.KEY_DISPLAY, true);
+      part.set(DataComponents.CUSTOM_DATA, CustomData.of(displayTag));
       return new DisplayPartRecipe(id, MaterialVariant.UNKNOWN, new Pattern(Loadables.ITEM.getKey(pi.part.asItem())), patternItems, 0, tool, List.of(part));
     });
   }
@@ -262,30 +266,4 @@ public class PartBuilderToolRecycle implements IPartBuilderRecipe, IMultiRecipe<
     return displayRecipes;
   }
 
-  /** @deprecated use {@link slimeknights.tconstruct.library.recipe.partbuilder.recycle.PartBuilderToolRecycleBuilder} */
-  @Deprecated(forRemoval = true)
-  public record Finished(ResourceLocation getId, SizedIngredient tools, Ingredient pattern) implements FinishedRecipe {
-    @Override
-    public void serializeRecipeData(JsonObject json) {
-      json.add("tools", SizedIngredient.LOADABLE.serialize(tools));
-      json.add("pattern", pattern.toJson());
-    }
-
-    @Override
-    public RecipeSerializer<?> getType() {
-      return TinkerTables.partBuilderToolRecycling.get();
-    }
-
-    @Nullable
-    @Override
-    public JsonObject serializeAdvancement() {
-      return null;
-    }
-
-    @Nullable
-    @Override
-    public ResourceLocation getAdvancementId() {
-      return null;
-    }
-  }
 }

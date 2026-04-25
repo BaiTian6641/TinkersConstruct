@@ -1,8 +1,8 @@
 package slimeknights.tconstruct.gadgets.entity;
 
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
@@ -10,15 +10,16 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Explosion.BlockInteraction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
+// NOTE: IEntityAdditionalSpawnData and NetworkHooks removed in 1.21.1 - custom entity spawn data disabled
+// import net.minecraftforge.entity.IEntityAdditionalSpawnData;
+// 
 import slimeknights.tconstruct.gadgets.TinkerGadgets;
 
 import javax.annotation.Nonnull;
 
 /** @deprecated use {@link slimeknights.tconstruct.tools.entity.ThrownShuriken} */
 @Deprecated
-public class EFLNEntity extends ThrowableItemProjectile implements IEntityAdditionalSpawnData {
+public class EFLNEntity extends ThrowableItemProjectile {
   public EFLNEntity(EntityType<? extends EFLNEntity> type, Level level) {
     super(type, level);
   }
@@ -45,6 +46,9 @@ public class EFLNEntity extends ThrowableItemProjectile implements IEntityAdditi
     }
   }
 
+  // NOTE: IEntityAdditionalSpawnData interface removed - spawn data methods disabled
+  // Entity data synchronization now relies on EntityDataSerializers only
+  /*
   @Override
   public void writeSpawnData(FriendlyByteBuf buffer) {
     buffer.writeItem(this.getItemRaw());
@@ -54,10 +58,11 @@ public class EFLNEntity extends ThrowableItemProjectile implements IEntityAdditi
   public void readSpawnData(FriendlyByteBuf additionalData) {
     this.setItem(additionalData.readItem());
   }
+  */
 
   @Nonnull
   @Override
-  public Packet<ClientGamePacketListener> getAddEntityPacket() {
-    return NetworkHooks.getEntitySpawningPacket(this);
+  public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+    return super.getAddEntityPacket(serverEntity);
   }
 }

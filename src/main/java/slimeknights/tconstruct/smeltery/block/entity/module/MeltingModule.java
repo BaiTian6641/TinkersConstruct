@@ -2,11 +2,14 @@ package slimeknights.tconstruct.smeltery.block.entity.module;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.items.ItemHandlerHelper;
 import slimeknights.mantle.block.entity.MantleBlockEntity;
 import slimeknights.tconstruct.common.network.InventorySlotSyncPacket;
 import slimeknights.tconstruct.common.network.TinkerNetwork;
@@ -24,6 +27,7 @@ import java.util.function.Predicate;
 @RequiredArgsConstructor
 public class MeltingModule implements IMeltingContainer, ContainerData {
   public static final int NO_SPACE = -1;
+  private static final RegistryAccess REGISTRY_ACCESS = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
 
   private static final String TAG_CURRENT_TIME = "time";
   private static final String TAG_REQUIRED_TIME = "required";
@@ -63,6 +67,11 @@ public class MeltingModule implements IMeltingContainer, ContainerData {
     return oreRate;
   }
 
+  @Override
+  public int size() {
+    return 1;
+  }
+
   /**
    * Resets recipe time values
    */
@@ -86,7 +95,7 @@ public class MeltingModule implements IMeltingContainer, ContainerData {
     // clear progress if setting to empty or the items do not match
     if (newStack.isEmpty()) {
       resetRecipe();
-    } else if (this.stack.isEmpty() || !ItemHandlerHelper.canItemStacksStack(this.stack, newStack)) {
+    } else if (this.stack.isEmpty() || !ItemStack.isSameItemSameComponents(this.stack, newStack)) {
       currentTime = 0;
     }
 
@@ -176,9 +185,9 @@ public class MeltingModule implements IMeltingContainer, ContainerData {
       return last;
     }
     // if that fails, try to find a new recipe
-    Optional<IMeltingRecipe> newRecipe = world.getRecipeManager().getRecipeFor(TinkerRecipeTypes.MELTING.get(), this, world);
+    Optional<RecipeHolder<IMeltingRecipe>> newRecipe = world.getRecipeManager().getRecipeFor(TinkerRecipeTypes.MELTING.get(), this, world);
     if (newRecipe.isPresent()) {
-      lastRecipe = newRecipe.get();
+      lastRecipe = newRecipe.get().value();
       return lastRecipe;
     }
     return null;
@@ -211,7 +220,10 @@ public class MeltingModule implements IMeltingContainer, ContainerData {
   public CompoundTag writeToTag() {
     CompoundTag nbt = new CompoundTag();
     if (!stack.isEmpty()) {
-      stack.save(nbt);
+      Tag saved = stack.save(REGISTRY_ACCESS);
+      if (saved instanceof CompoundTag stackTag) {
+        nbt.merge(stackTag);
+      }
       nbt.putInt(TAG_CURRENT_TIME, currentTime);
       nbt.putInt(TAG_REQUIRED_TIME, requiredTime);
       nbt.putInt(TAG_REQUIRED_TEMP, requiredTemp);
@@ -224,7 +236,7 @@ public class MeltingModule implements IMeltingContainer, ContainerData {
    * @param nbt  NBT
    */
   public void readFromTag(CompoundTag nbt) {
-    stack = ItemStack.of(nbt);
+    stack = ItemStack.parseOptional(REGISTRY_ACCESS, nbt);
     if (!stack.isEmpty()) {
       currentTime = nbt.getInt(TAG_CURRENT_TIME);
       requiredTime = nbt.getInt(TAG_REQUIRED_TIME);

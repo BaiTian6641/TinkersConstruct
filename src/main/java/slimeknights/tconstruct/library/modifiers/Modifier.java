@@ -6,6 +6,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
@@ -104,13 +105,18 @@ public class Modifier implements IdAwareObject {
   }
 
   @Override
-  public ModifierId getId() {
+  public ResourceLocation getId() {
+    return Objects.requireNonNull(id, "Modifier has null registry name").getLocation();
+  }
+
+  /** Gets the type-safe modifier ID */
+  public ModifierId getModifierId() {
     return Objects.requireNonNull(id, "Modifier has null registry name");
   }
 
   /** Checks if the modifier is in the given tag */
   public final boolean is(TagKey<Modifier> tag) {
-    return ModifierManager.isInTag(this.getId(), tag);
+    return ModifierManager.isInTag(this.getModifierId(), tag);
   }
 
 
@@ -141,7 +147,7 @@ public class Modifier implements IdAwareObject {
    * @return  Translation key
    */
   protected String makeTranslationKey() {
-    return Util.makeTranslationKey("modifier", Objects.requireNonNull(id));
+    return Util.makeTranslationKey("modifier", Objects.requireNonNull(id).getLocation());
   }
 
   /**

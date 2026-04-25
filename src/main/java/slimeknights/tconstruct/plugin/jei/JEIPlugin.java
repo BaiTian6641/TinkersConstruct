@@ -5,7 +5,7 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.constants.VanillaTypes;
-import mezz.jei.api.forge.ForgeTypes;
+import mezz.jei.api.neoforge.NeoForgeTypes;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.helpers.IModIdHelper;
 import mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter;
@@ -42,9 +42,9 @@ import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.fml.ModList;
 import slimeknights.mantle.client.SafeClientAccess;
 import slimeknights.mantle.recipe.helper.RecipeHelper;
 import slimeknights.mantle.util.RetexturedHelper;
@@ -357,7 +357,7 @@ public class JEIPlugin implements IModPlugin {
 
     // potions
     registry.registerSubtypeInterpreter(VanillaTypes.ITEM_STACK, TinkerFluids.potion.asItem(), (PotionSubtypeInterpreter<ItemStack>)ItemStack::getTag);
-    registry.registerSubtypeInterpreter(ForgeTypes.FLUID_STACK, TinkerFluids.potion.get(), (PotionSubtypeInterpreter<FluidStack>)FluidStack::getTag);
+    registry.registerSubtypeInterpreter(NeoForgeTypes.FLUID_STACK, TinkerFluids.potion.get(), (PotionSubtypeInterpreter<FluidStack>)FluidStack::getTag);
 
     // parts
     for (Holder<Item> item : BuiltInRegistries.ITEM.getTagOrEmpty(TinkerTags.Items.TOOL_PARTS)) {
@@ -532,7 +532,7 @@ public class JEIPlugin implements IModPlugin {
 
     // add potion fluids for each potion variant if requested
     if (Config.CLIENT.showPotionFluidInJEI.get()) {
-      manager.addIngredientsAtRuntime(ForgeTypes.FLUID_STACK,
+      manager.addIngredientsAtRuntime(NeoForgeTypes.FLUID_STACK,
                                       BuiltInRegistries.POTION.holders().filter(holder -> {
                                         Potion potion = holder.get();
                                         return potion != Potions.EMPTY && potion != Potions.WATER && !holder.is(TinkerTags.Potions.HIDDEN_FLUID);
@@ -542,7 +542,7 @@ public class JEIPlugin implements IModPlugin {
     removeFluid(removeFluids, TinkerFluids.potion.get());
 
     // remove all the fluids
-    manager.removeIngredientsAtRuntime(ForgeTypes.FLUID_STACK, removeFluids);
+    manager.removeIngredientsAtRuntime(NeoForgeTypes.FLUID_STACK, removeFluids);
 
     // hide easter egg recipes
     Level level = SafeClientAccess.getLevel();
@@ -561,3 +561,4 @@ public class JEIPlugin implements IModPlugin {
     modIdHelper = jeiRuntime.getJeiHelpers().getModIdHelper();
   }
 }
+

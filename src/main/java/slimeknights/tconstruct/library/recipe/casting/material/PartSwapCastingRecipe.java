@@ -1,12 +1,16 @@
 package slimeknights.tconstruct.library.recipe.casting.material;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import slimeknights.mantle.data.loadable.common.IngredientLoadable;
 import slimeknights.mantle.data.loadable.field.ContextKey;
 import slimeknights.mantle.data.loadable.primitive.IntLoadable;
@@ -150,12 +154,12 @@ public class PartSwapCastingRecipe extends AbstractMaterialCastingRecipe impleme
   }
 
   @Override
-  public ItemStack getResultItem(RegistryAccess registryAccess) {
+  public ItemStack getResultItem(HolderLookup.Provider registryAccess) {
     return getCast().getItems()[0].copy();
   }
 
   @Override
-  public ItemStack assemble(ICastingContainer inv, RegistryAccess access) {
+  public ItemStack assemble(ICastingContainer inv, HolderLookup.Provider access) {
     MaterialFluidRecipe fluidRecipe = getFluidRecipe(inv);
     MaterialVariant material = fluidRecipe.getOutput();
     ItemStack cast = inv.getStack();
@@ -239,7 +243,9 @@ public class PartSwapCastingRecipe extends AbstractMaterialCastingRecipe impleme
                   results.add(withMaterial(tool, output).copy());
                   // mark input as display so tooltip does not show useless stats
                   ItemStack input = withMaterial(tool, MaterialVariant.of(ToolBuildHandler.getRenderMaterial(0)));
-                  input.getOrCreateTag().putBoolean(TooltipUtil.KEY_DISPLAY, true);
+                  CompoundTag displayTag = input.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+                  displayTag.putBoolean(TooltipUtil.KEY_DISPLAY, true);
+                  input.set(DataComponents.CUSTOM_DATA, CustomData.of(displayTag));
                   inputs.add(input);
                 }
               }

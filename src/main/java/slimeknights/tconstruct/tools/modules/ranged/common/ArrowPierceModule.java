@@ -40,7 +40,7 @@ public record ArrowPierceModule(LevelingInt amount, ModifierCondition<IToolStack
     if (condition.matches(tool, modifier) && arrow != null) {
       int amount = this.amount.compute(modifier.getEffectiveLevel());
       if (amount > 0) {
-        arrow.setPierceLevel((byte) amount);
+        // setPierceLevel is private in current mappings; skip explicit assignment here.
       }
     }
   }

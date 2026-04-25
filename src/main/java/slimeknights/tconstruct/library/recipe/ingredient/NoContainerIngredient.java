@@ -1,25 +1,40 @@
 package slimeknights.tconstruct.library.recipe.ingredient;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import com.google.gson.JsonElement;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Dynamic;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.common.crafting.IIngredientSerializer;
-import net.minecraftforge.common.crafting.VanillaIngredientSerializer;
-import slimeknights.tconstruct.TConstruct;
-import slimeknights.tconstruct.library.utils.JsonUtils;
+import net.neoforged.neoforge.common.crafting.IngredientType;
+import slimeknights.tconstruct.shared.TinkerCommons;
 
 import javax.annotation.Nullable;
 
 /** Ingredient matching an item with no container item, used to ensure NBT fluid items are empty */
 public class NoContainerIngredient extends NestedIngredient {
-  public static final ResourceLocation ID = TConstruct.getResource("no_container");
+  public static final MapCodec<NoContainerIngredient> CODEC = MapCodec.assumeMapUnsafe(Codec.PASSTHROUGH.flatXmap(
+      dynamic -> {
+        try {
+          JsonObject json = dynamic.convert(JsonOps.INSTANCE).getValue().getAsJsonObject();
+          return DataResult.success(fromJson(json));
+        } catch (RuntimeException ex) {
+          return DataResult.error(ex::getMessage);
+        }
+      },
+      ingredient -> DataResult.success(new Dynamic<>(JsonOps.INSTANCE, ingredient.toJson()))
+  ));
+
+  public static final StreamCodec<RegistryFriendlyByteBuf, NoContainerIngredient> STREAM_CODEC = ByteBufCodecs.fromCodecWithRegistries(CODEC.codec());
 
   protected NoContainerIngredient(Ingredient nested) {
     super(nested);
@@ -36,71 +51,50 @@ public class NoContainerIngredient extends NestedIngredient {
   }
 
   @Override
-  public JsonElement toJson() {
-    JsonElement nestedElement = nested.toJson();
-    // if we are a vanilla ingredient, and not an array ingredient, serialize into the ingredient directly
-    if (nested.isVanilla() && nestedElement.isJsonObject()) {
-      JsonObject nestedObject = nestedElement.getAsJsonObject();
-      nestedObject.addProperty("type", ID.toString());
-      return nestedObject;
-    }
-    // if we have an array or a type, then serialize nested
-    JsonObject json = JsonUtils.withType(ID);
+  public IngredientType<?> getType() {
+    return TinkerCommons.NO_CONTAINER_INGREDIENT.get();
+  }
+
+  private JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    json.addProperty("type", "tconstruct:no_container");
+    JsonElement nestedElement = Ingredient.CODEC.encodeStart(JsonOps.INSTANCE, nested).getOrThrow(IllegalStateException::new);
     json.add("match", nestedElement);
     return json;
   }
 
-  @Override
-  public IIngredientSerializer<? extends Ingredient> getSerializer() {
-    return Serializer.INSTANCE;
-  }
-
-  public enum Serializer implements IIngredientSerializer<NoContainerIngredient> {
-    INSTANCE;
-
-    @Override
-    public NoContainerIngredient parse(JsonObject json) {
-      // if we have match, parse as a nested object. Without match, just parse the object as vanilla
-      Ingredient ingredient;
-      if (json.has("match")) {
-        ingredient = CraftingHelper.getIngredient(json.get("match"), false);
-      } else {
-        ingredient = VanillaIngredientSerializer.INSTANCE.parse(json);
-      }
-      return new NoContainerIngredient(ingredient);
+  private static NoContainerIngredient fromJson(JsonObject json) {
+    Ingredient ingredient;
+    if (json.has("match")) {
+      ingredient = Ingredient.CODEC.parse(JsonOps.INSTANCE, json.get("match")).getOrThrow(IllegalArgumentException::new);
+    } else {
+      JsonObject nested = json.deepCopy();
+      nested.remove("type");
+      ingredient = Ingredient.CODEC.parse(JsonOps.INSTANCE, nested).getOrThrow(IllegalArgumentException::new);
     }
-
-    @Override
-    public NoContainerIngredient parse(FriendlyByteBuf buffer) {
-      return new NoContainerIngredient(Ingredient.fromNetwork(buffer));
-    }
-
-    @Override
-    public void write(FriendlyByteBuf buffer, NoContainerIngredient ingredient) {
-      ingredient.nested.toNetwork(buffer);
-    }
+    return new NoContainerIngredient(ingredient);
   }
 
 
   /* Static constructors */
 
   /** Creates an instance from the given nested ingredient */
-  public static NoContainerIngredient of(Ingredient ingredient) {
-    return new NoContainerIngredient(ingredient);
+  public static Ingredient of(Ingredient ingredient) {
+    return new NoContainerIngredient(ingredient).toVanilla();
   }
 
   /** Creates an instance from the given items */
-  public static NoContainerIngredient of(ItemLike... items) {
+  public static Ingredient of(ItemLike... items) {
     return of(Ingredient.of(items));
   }
 
   /** Creates an instance from the given stacks */
-  public static NoContainerIngredient of(ItemStack... stacks) {
+  public static Ingredient of(ItemStack... stacks) {
     return of(Ingredient.of(stacks));
   }
 
   /** Creates an instance from the given tag */
-  public static NoContainerIngredient of(TagKey<Item> tag) {
+  public static Ingredient of(TagKey<Item> tag) {
     return of(Ingredient.of(tag));
   }
 }

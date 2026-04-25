@@ -2,15 +2,14 @@ package slimeknights.tconstruct.library.recipe.modifiers.adding;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.math.IntMath;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.Lazy;
-import net.minecraftforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.common.util.Lazy;
 import slimeknights.mantle.data.loadable.common.IngredientLoadable;
 import slimeknights.mantle.data.loadable.field.ContextKey;
 import slimeknights.mantle.data.loadable.field.LoadableField;
@@ -75,11 +74,11 @@ public class IncrementalModifierRecipe extends AbstractModifierRecipe {
   }
 
   @Override
-  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, RegistryAccess access) {
+  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, HolderLookup.Provider access) {
     ToolStack tool = inv.getTinkerable();
 
     // fetch the amount from the modifier, will be 0 if we have a full level
-    ModifierId modifier = result.getId();
+    ModifierId modifier = new ModifierId(result.getId());
     boolean crystal = matchesCrystal(inv);
     boolean isNewLevel = crystal || tool.getUpgrades().getEntry(modifier).getAmount(0) <= 0;
 
@@ -130,7 +129,7 @@ public class IncrementalModifierRecipe extends AbstractModifierRecipe {
 
     // fetch the differences
     ToolStack inputTool = inv.getTinkerable();
-    ModifierId modifier = this.result.getId();
+    ModifierId modifier = new ModifierId(this.result.getId());
     ModifierEntry inputEntry = inputTool.getUpgrades().getEntry(modifier);
     ModifierEntry resultEntry = result.getTool().getUpgrades().getEntry(modifier);
 
@@ -181,7 +180,7 @@ public class IncrementalModifierRecipe extends AbstractModifierRecipe {
       if (neededPerLevel % amountPerInput > 0) {
         needed++;
       }
-      Lazy<List<ItemStack>> fullSize = Lazy.of(() -> items.stream().map(stack -> ItemHandlerHelper.copyStackWithSize(stack, maxStackSize)).collect(Collectors.toList()));
+      Lazy<List<ItemStack>> fullSize = Lazy.of(() -> items.stream().map(stack -> copyWithSize(stack, maxStackSize)).collect(Collectors.toList()));
       while (needed > maxStackSize) {
         builder.add(fullSize.get());
         needed -= maxStackSize;
@@ -189,7 +188,7 @@ public class IncrementalModifierRecipe extends AbstractModifierRecipe {
       // set proper stack size on remaining
       if (needed > 0) {
         int remaining = needed;
-        builder.add(items.stream().map(stack -> ItemHandlerHelper.copyStackWithSize(stack, remaining)).collect(Collectors.toList()));
+        builder.add(items.stream().map(stack -> copyWithSize(stack, remaining)).collect(Collectors.toList()));
       }
       slotCache = builder.build();
     }
@@ -270,7 +269,7 @@ public class IncrementalModifierRecipe extends AbstractModifierRecipe {
       if (!leftover.isEmpty()) {
         // leftoverAmount refers to how many we need to that is does not fit cleanly into amountPerInput
         // but we want to return the amount we did not use, hence the subtraction
-        inv.giveItem(ItemHandlerHelper.copyStackWithSize(leftover, (amountPerInput - leftoverAmount) * leftover.getCount()));
+        inv.giveItem(copyWithSize(leftover, (amountPerInput - leftoverAmount) * leftover.getCount()));
       }
     }
     for (int i = 0; i < inv.getInputCount(); i++) {
@@ -287,5 +286,16 @@ public class IncrementalModifierRecipe extends AbstractModifierRecipe {
         itemsNeeded -= count;
       }
     }
+  }
+
+  /**
+   * Creates a copy of the stack with the requested count.
+   * Equivalent to the removed ItemHandlerHelper#copyStackWithSize helper.
+   */
+  private static ItemStack copyWithSize(ItemStack stack, int size) {
+    if (size <= 0 || stack.isEmpty()) {
+      return ItemStack.EMPTY;
+    }
+    return stack.copyWithCount(size);
   }
 }

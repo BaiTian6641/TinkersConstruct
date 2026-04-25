@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.TagKey;
@@ -151,12 +152,9 @@ public record FireballModule(List<FireballType> options, DamageTypePair damageTy
 
 
         // prepare projectile
-        Vec3 lookVec = entity.getLookAngle().scale(2);
+        Vec3 lookVec = entity.getLookAngle().scale(2 * velocity);
         RandomSource random = entity.getRandom();
         CustomFireball projectile = new CustomFireball(level, entity, lookVec.x + random.nextGaussian() * inaccuracy, lookVec.y, lookVec.z + random.nextGaussian() * inaccuracy);
-        projectile.xPower *= velocity;
-        projectile.yPower *= velocity;
-        projectile.zPower *= velocity;
         projectile.setPower(power);
         projectile.setPos(projectile.getX(), entity.getY(0.5D) + 0.5D, projectile.getZ());
 
@@ -212,10 +210,11 @@ public record FireballModule(List<FireballType> options, DamageTypePair damageTy
 
   @Override
   public boolean startInteract(IToolStackView tool, ModifierEntry modifier, Player player, EquipmentSlot slot, TooltipKey keyModifier) {
-    if (keyModifier == TooltipKey.NORMAL && condition.matches(tool, modifier) && !tool.isBroken() && !player.hasEffect(TinkerModifiers.fireballCooldownEffect.get())) {
+    var cooldown = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(TinkerModifiers.fireballCooldownEffect.get());
+    if (keyModifier == TooltipKey.NORMAL && condition.matches(tool, modifier) && !tool.isBroken() && !player.hasEffect(cooldown)) {
       if (shoot(tool, modifier, player, player, slot)) {
         if (!player.level().isClientSide) {
-          player.addEffect(new MobEffectInstance(TinkerModifiers.fireballCooldownEffect.get(), GeneralInteractionModifierHook.getDrawtime(tool, player, 1)));
+          player.addEffect(new MobEffectInstance(cooldown, GeneralInteractionModifierHook.getDrawtime(tool, player, 1)));
         }
         return true;
       }

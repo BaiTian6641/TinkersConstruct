@@ -1,7 +1,10 @@
 package slimeknights.tconstruct.library.tools.part;
 
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.ItemLike;
 import slimeknights.tconstruct.library.materials.MaterialRegistry;
 import slimeknights.tconstruct.library.materials.definition.IMaterial;
@@ -34,8 +37,12 @@ public interface IMaterialItem extends ItemLike {
 
   /** Sets the material on the existing stack, bypassing the valid material check. */
   default ItemStack setMaterialForced(ItemStack stack, MaterialVariantId material) {
-    // FIXME: it is odd that we assume the NBT format in this method but not in getMaterial, should be consistent in the implementation location
-    stack.getOrCreateTag().putString(MATERIAL_TAG, material.toString());
+    CompoundTag tag = getMaterialTag(stack);
+    if (tag == null) {
+      tag = new CompoundTag();
+    }
+    tag.putString(MATERIAL_TAG, material.toString());
+    stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     return stack;
   }
 
@@ -101,6 +108,12 @@ public interface IMaterialItem extends ItemLike {
       return ((IMaterialItem) stack.getItem()).getMaterial(stack);
     }
     return IMaterial.UNKNOWN_ID;
+  }
+
+  /** Returns the custom data tag backing material serialization, if present. */
+  static CompoundTag getMaterialTag(ItemStack stack) {
+    CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+    return customData != null ? customData.copyTag() : null;
   }
 
   /**

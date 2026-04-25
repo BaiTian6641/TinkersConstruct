@@ -60,8 +60,9 @@ public class DyedModifierModel implements SimpleModifierModel {
     ModifierId modifier = entry.getId();
     IModDataView data = tool.getPersistentData();
     int color = -1;
-    if (data.contains(modifier, Tag.TAG_INT)) {
-      color = data.getInt(modifier);
+    ResourceLocation key = modifier.getLocation();
+    if (data.contains(key, Tag.TAG_INT)) {
+      color = data.getInt(key);
     }
     return new CacheKey(modifier, color);
   }
@@ -71,7 +72,7 @@ public class DyedModifierModel implements SimpleModifierModel {
     Material texture = isLarge ? large : small;
     if (texture != null) {
       IModDataView data = tool.getPersistentData();
-      ResourceLocation key = modifier.getId();
+      ResourceLocation key = modifier.getId().getLocation();
       if (data.contains(key, Tag.TAG_INT)) {
         quadConsumer.accept(MantleItemLayerModel.getQuadsForSprite(0xFF000000 | data.getInt(key), -1, spriteGetter.apply(texture), transforms, 0, pixels));
       }

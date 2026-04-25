@@ -9,17 +9,16 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.util.NonNullConsumer;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import slimeknights.tconstruct.compat.neoforge.common.util.LazyOptional;
+import java.util.function.Consumer;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import slimeknights.mantle.block.entity.MantleBlockEntity;
 import slimeknights.mantle.util.WeakConsumerWrapper;
 import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.library.recipe.fuel.MeltingFuel;
 import slimeknights.tconstruct.library.recipe.fuel.MeltingFuelLookup;
-import slimeknights.tconstruct.library.utils.Util;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -30,7 +29,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public abstract class FuelModule implements ContainerData {
   /** Listener to attach to stored capability */
-  protected final NonNullConsumer<LazyOptional<IFluidHandler>> fluidListener = new WeakConsumerWrapper<>(this, FuelModule::resetHandler);
+  protected final Consumer<LazyOptional<IFluidHandler>> fluidListener = new WeakConsumerWrapper<>(this, FuelModule::resetHandler);
 
   /** Parent TE */
   protected final MantleBlockEntity parent;
@@ -63,11 +62,6 @@ public abstract class FuelModule implements ContainerData {
   /** Called when the capability invalidates to reset any listeners */
   protected void resetHandler(@Nullable LazyOptional<?> source) {
     if (source == null || source == fluidHandler) {
-      // for efficiency on Forge, clear listener. Neo lacks this so we protect against redundant calls
-      // note that this will break if the source is the listener, below check does both null check and not source check
-      if (source != fluidHandler && Util.isForge()) {
-        fluidHandler.removeListener(fluidListener);
-      }
       fluidHandler = null;
     }
   }
@@ -130,7 +124,7 @@ public abstract class FuelModule implements ContainerData {
       int amount = recipe.getAmount(fluid.getFluid());
       if (fluid.getAmount() >= amount) {
         if (consume) {
-          FluidStack drained = handler.drain(new FluidStack(fluid, amount), FluidAction.EXECUTE);
+          FluidStack drained = handler.drain(fluid.copyWithAmount(amount), FluidAction.EXECUTE);
           if (drained.getAmount() != amount) {
             TConstruct.LOG.error("Invalid amount of fuel drained from tank");
           }

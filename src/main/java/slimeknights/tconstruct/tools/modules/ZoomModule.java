@@ -8,7 +8,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.UseAnim;
-import net.minecraftforge.common.util.LazyOptional;
 import slimeknights.mantle.client.TooltipKey;
 import slimeknights.mantle.data.loadable.mapping.SimpleRecordLoadable;
 import slimeknights.mantle.data.loadable.primitive.EnumLoadable;
@@ -27,6 +26,7 @@ import slimeknights.tconstruct.library.tools.capability.TinkerDataKeys;
 import slimeknights.tconstruct.library.tools.context.EquipmentChangeContext;
 import slimeknights.tconstruct.library.tools.helper.ModifierUtil;
 import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
+import slimeknights.tconstruct.library.tools.capability.TinkerDataCapability.Holder;
 
 import java.util.List;
 
@@ -90,17 +90,23 @@ public enum ZoomModule implements ModifierModule, GeneralInteractionModifierHook
 
   /** Starts spyglass style zooming */
   private static void setZoom(ModifierEntry modifier, LivingEntity living, float amount) {
-    living.getCapability(TinkerDataCapability.CAPABILITY).ifPresent(data -> data.computeIfAbsent(TinkerDataKeys.FOV_MODIFIER).set(modifier.getId(), amount));
+    Holder data = TinkerDataCapability.getData(living);
+    if (data != null) {
+      data.computeIfAbsent(TinkerDataKeys.FOV_MODIFIER).set(modifier.getId().getLocation(), amount);
+    }
   }
 
   /** Stops zooming */
-  private static void stopZoom(ModifierEntry modifier, LazyOptional<TinkerDataCapability.Holder> tinkerData) {
-    tinkerData.ifPresent(data -> data.computeIfAbsent(TinkerDataKeys.FOV_MODIFIER).remove(modifier.getId()));
+  private static void stopZoom(ModifierEntry modifier, Holder tinkerData) {
+    tinkerData.computeIfAbsent(TinkerDataKeys.FOV_MODIFIER).remove(modifier.getId().getLocation());
   }
 
   /** Stops zooming */
   private static void stopZoom(ModifierEntry modifier, LivingEntity entity) {
-    stopZoom(modifier, entity.getCapability(TinkerDataCapability.CAPABILITY));
+    Holder data = TinkerDataCapability.getData(entity);
+    if (data != null) {
+      stopZoom(modifier, data);
+    }
   }
 
 
@@ -162,7 +168,10 @@ public enum ZoomModule implements ModifierModule, GeneralInteractionModifierHook
     if (context.getEntity().level().isClientSide) {
       IToolStackView replacement = context.getReplacementTool();
       if (replacement == null || replacement.getModifierLevel(modifier.getModifier()) == 0) {
-        stopZoom(modifier, context.getTinkerData());
+        Holder data = context.getTinkerData();
+        if (data != null) {
+          stopZoom(modifier, data);
+        }
       }
     }
   }

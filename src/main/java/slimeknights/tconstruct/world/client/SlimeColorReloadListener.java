@@ -1,15 +1,16 @@
 package slimeknights.tconstruct.world.client;
 
-import net.minecraft.client.resources.LegacyStuffWrapper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.fml.ModLoader;
 import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.world.block.FoliageType;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Color reload listener for all slime foliage types
@@ -19,7 +20,7 @@ public class SlimeColorReloadListener extends SimplePreparableReloadListener<int
   private final ResourceLocation path;
   public SlimeColorReloadListener(FoliageType color) {
     this.color = color;
-    this.path = TConstruct.getResource("textures/colormap/" + color.getSerializedName() + "_grass_color.png");
+    this.path = ResourceLocation.fromNamespaceAndPath(TConstruct.MOD_ID, "textures/colormap/" + color.getSerializedName() + "_grass_color.png");
   }
 
   /**
@@ -27,13 +28,18 @@ public class SlimeColorReloadListener extends SimplePreparableReloadListener<int
    */
   @Override
   protected int[] prepare(ResourceManager resourceManager, ProfilerFiller profiler) {
-    if (!ModLoader.isLoadingStateValid()) {
-      return new int[0];
-    }
-    try {
-      return LegacyStuffWrapper.getPixels(resourceManager, path);
-    } catch (IOException ioexception) {
-      TConstruct.LOG.error("Failed to load slime colors", ioexception);
+    try (InputStream stream = resourceManager.open(path)) {
+      BufferedImage image = ImageIO.read(stream);
+      if (image == null) {
+        return new int[0];
+      }
+      int width = image.getWidth();
+      int height = image.getHeight();
+      int[] pixels = new int[width * height];
+      image.getRGB(0, 0, width, height, pixels, 0, width);
+      return pixels;
+    } catch (IOException exception) {
+      TConstruct.LOG.error("Failed to load slime colors from {}", path, exception);
       return new int[0];
     }
   }

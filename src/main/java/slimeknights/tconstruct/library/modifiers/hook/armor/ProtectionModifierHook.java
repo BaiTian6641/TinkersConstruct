@@ -3,7 +3,7 @@ package slimeknights.tconstruct.library.modifiers.hook.armor;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.common.util.LazyOptional;
+import net.minecraft.core.registries.BuiltInRegistries;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.tools.capability.TinkerDataCapability;
 import slimeknights.tconstruct.library.tools.capability.TinkerDataKeys;
@@ -39,14 +39,14 @@ public interface ProtectionModifierHook {
   /** Gets the maximum protection amount on the given entity */
   @SuppressWarnings("removal")
   @Deprecated(forRemoval = true)
-  static float getProtectionCap(LazyOptional<TinkerDataCapability.Holder> capability) {
-    return Math.min(20 + capability.resolve().map(data -> data.get(TinkerDataKeys.PROTECTION_CAP)).orElse(0f), 25 * 0.95f);
+  static float getProtectionCap(TinkerDataCapability.Holder capability) {
+    return Math.min(20 + (capability != null ? capability.get(TinkerDataKeys.PROTECTION_CAP, 0f) : 0f), 25 * 0.95f);
   }
 
   /** Gets the maximum protection amount on the given entity */
   @SuppressWarnings("removal")
-  static double getProtectionCap(LivingEntity living, LazyOptional<TinkerDataCapability.Holder> capability) {
-    return Math.min(living.getAttributeValue(TinkerAttributes.PROTECTION_CAP.get()) * 25f + capability.resolve().map(data -> data.get(TinkerDataKeys.PROTECTION_CAP)).orElse(0f), 25 * 0.95f);
+  static double getProtectionCap(LivingEntity living, TinkerDataCapability.Holder capability) {
+    return Math.min(living.getAttributeValue(BuiltInRegistries.ATTRIBUTE.wrapAsHolder(TinkerAttributes.PROTECTION_CAP.get())) * 25f + (capability != null ? capability.get(TinkerDataKeys.PROTECTION_CAP, 0f) : 0f), 25 * 0.95f);
   }
 
   /** Gets the maximum protection amount on the given entity */

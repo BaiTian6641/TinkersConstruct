@@ -213,13 +213,6 @@ public interface EnchantmentModule extends ModifierModule, LevelingIntModule, Co
 
     @Override
     public float getProtectionModifier(IToolStackView tool, ModifierEntry modifier, EquipmentContext context, EquipmentSlot slotType, DamageSource source, float modifierValue) {
-      if (condition().matches(tool, modifier)) {
-        int subtractLevel = getLevel(modifier);
-        Enchantment enchantment = enchantment();
-        if (subtractLevel > 0 && LogicHelper.isInList(enchantment.slots, slotType) && !source.is(DamageTypeTags.BYPASSES_ENCHANTMENTS)) {
-          modifierValue -= enchantment.getDamageProtection(subtractLevel, source);
-        }
-      }
       return modifierValue;
     }
   }

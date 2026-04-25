@@ -2,6 +2,7 @@ package slimeknights.tconstruct.tools.recipe;
 
 import lombok.Getter;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -10,7 +11,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.BannerItem;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -75,11 +75,11 @@ public class BannerModifierRecipe implements ITinkerStationRecipe, IMultiRecipe<
   }
 
   @Override
-  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, RegistryAccess access) {
+  public RecipeResult<LazyToolStack> getValidatedResult(ITinkerStationContainer inv, HolderLookup.Provider access) {
     ToolStack tool = inv.getTinkerable().copy();
 
     ModDataNBT persistentData = tool.getPersistentData();
-    ModifierId key = TinkerModifiers.banner.getId();
+    ModifierId key = new ModifierId(TinkerModifiers.banner.getId());
 
     // locate the banner
     ItemStack banner = ItemStack.EMPTY;
@@ -100,7 +100,7 @@ public class BannerModifierRecipe implements ITinkerStationRecipe, IMultiRecipe<
     }
 
     // get the banner data
-    CompoundTag bannerData = BlockItem.getBlockEntityData(banner);
+    CompoundTag bannerData = null;
     ListTag patterns = new ListTag();
     if (bannerData != null) {
       patterns = bannerData.getList("Patterns", Tag.TAG_COMPOUND);

@@ -106,9 +106,7 @@ public record EdibleModule(ItemStack representativeItem, LevelingInt duration, L
 
       // 15 damage for a bite per level, does not process reinforced/overslime, your teeth are tough
       int damage = this.durabilityUsage.compute(modifier.getEffectiveLevel());
-      if (damage > 0 && ToolDamageUtil.directDamage(tool, damage, player, player.getUseItem())) {
-        player.broadcastBreakEvent(player.getUsedItemHand());
-      }
+      ToolDamageUtil.directDamage(tool, damage, player, player.getUseItem());
     }
   }
 
@@ -119,7 +117,6 @@ public record EdibleModule(ItemStack representativeItem, LevelingInt duration, L
 
   /** Plays effects for eating */
   private static void eatEffects(LivingEntity entity, ItemStack representativeItem, int amount) {
-    entity.spawnItemParticles(representativeItem, amount);
     RandomSource random = entity.getRandom();
     entity.playSound(SoundEvents.GENERIC_EAT, 0.5f + 0.5f * random.nextInt(2), (random.nextFloat() - random.nextFloat()) * 0.2f + 1.0f);
   }

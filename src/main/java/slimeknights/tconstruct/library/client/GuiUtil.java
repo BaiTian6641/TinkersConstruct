@@ -15,14 +15,26 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.joml.Matrix4f;
 import slimeknights.mantle.client.screen.ElementScreen;
 import slimeknights.tconstruct.library.recipe.partbuilder.Pattern;
 
+import java.lang.reflect.Field;
+
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class GuiUtil {
+  private static int readScreenIntField(AbstractContainerScreen<?> screen, String name) {
+    try {
+      Field field = AbstractContainerScreen.class.getDeclaredField(name);
+      field.setAccessible(true);
+      return field.getInt(screen);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("Unable to read screen field: " + name, e);
+    }
+  }
+
   /**
    * Draws the background of a container
    * @param graphics    Graphics context
@@ -30,7 +42,11 @@ public final class GuiUtil {
    * @param background  Background location
    */
   public static void drawBackground(GuiGraphics graphics, AbstractContainerScreen<?> screen, ResourceLocation background) {
-    graphics.blit(background, screen.leftPos, screen.topPos, 0, 0, screen.imageWidth, screen.imageHeight);
+    int left = readScreenIntField(screen, "leftPos");
+    int top = readScreenIntField(screen, "topPos");
+    int width = readScreenIntField(screen, "imageWidth");
+    int height = readScreenIntField(screen, "imageHeight");
+    graphics.blit(background, left, top, 0, 0, width, height);
   }
 
   /**
@@ -139,16 +155,15 @@ public final class GuiUtil {
   public static void renderTiledTextureAtlas(PoseStack matrices, AbstractContainerScreen<?> screen, TextureAtlasSprite sprite, int x, int y, int width, int height, int depth, boolean upsideDown) {
     // start drawing sprites
     RenderUtils.bindTexture(sprite.atlasLocation());
-    BufferBuilder builder = Tesselator.getInstance().getBuilder();
-    builder.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+    BufferBuilder builder = Tesselator.getInstance().begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
     // tile vertically
     float u1 = sprite.getU0();
     float v1 = sprite.getV0();
     int spriteHeight = sprite.contents().height();
     int spriteWidth = sprite.contents().width();
-    int startX = x + screen.leftPos;
-    int startY = y + screen.topPos;
+    int startX = x + readScreenIntField(screen, "leftPos");
+    int startY = y + readScreenIntField(screen, "topPos");
     do {
       int renderHeight = Math.min(spriteHeight, height);
       height -= renderHeight;
@@ -177,7 +192,7 @@ public final class GuiUtil {
     } while(height > 0);
 
     // finish drawing sprites
-    BufferUploader.drawWithShader(builder.end());
+    BufferUploader.drawWithShader(builder.buildOrThrow());
     // RenderSystem.enableAlphaTest();
     RenderSystem.enableDepthTest();
   }
@@ -196,10 +211,10 @@ public final class GuiUtil {
    * @param v2       Texture V end
    */
   private static void buildSquare(Matrix4f matrix, BufferBuilder builder, int x1, int x2, int y1, int y2, int z, float u1, float u2, float v1, float v2) {
-    builder.vertex(matrix, x1, y2, z).uv(u1, v2).endVertex();
-    builder.vertex(matrix, x2, y2, z).uv(u2, v2).endVertex();
-    builder.vertex(matrix, x2, y1, z).uv(u2, v1).endVertex();
-    builder.vertex(matrix, x1, y1, z).uv(u1, v1).endVertex();
+    builder.addVertex(matrix, x1, y2, z).setUv(u1, v2);
+    builder.addVertex(matrix, x2, y2, z).setUv(u2, v2);
+    builder.addVertex(matrix, x2, y1, z).setUv(u2, v1);
+    builder.addVertex(matrix, x1, y1, z).setUv(u1, v1);
   }
 
   /**

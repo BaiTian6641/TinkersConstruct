@@ -5,14 +5,11 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraftforge.common.util.BlockSnapshot;
-import net.minecraftforge.event.ForgeEventFactory;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import slimeknights.mantle.data.loadable.common.BlockStateLoadable;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
@@ -71,7 +68,7 @@ public record ReplaceBlockWalkerModule(List<BlockReplacement> replacements, Leve
           BlockState state = replacement.state;
           if (replacement.target.matches(world.getBlockState(mutable))
               && state.canSurvive(world, mutable) && world.isUnobstructed(state, mutable, CollisionContext.empty())
-              && !ForgeEventFactory.onBlockPlace(living, BlockSnapshot.create(world.dimension(), world, mutable), Direction.UP)) {
+              ) {
             world.setBlockAndUpdate(mutable, state);
             world.scheduleTick(mutable, state.getBlock(), Mth.nextInt(living.getRandom(), 60, 120));
 

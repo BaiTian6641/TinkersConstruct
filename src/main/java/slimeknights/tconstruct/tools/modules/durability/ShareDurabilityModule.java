@@ -31,7 +31,7 @@ import java.util.List;
 public record ShareDurabilityModule(LazyModifier shield, LevelingInt grant, LevelingInt consume) implements ModifierModule, ToolDamageModifierHook {
   private static final List<ModuleHook<?>> DEFAULT_HOOKS = HookProvider.<ShareDurabilityModule>defaultHooks(ModifierHooks.TOOL_DAMAGE);
   public static final RecordLoadable<ShareDurabilityModule> LOADER = RecordLoadable.create(
-    ModifierId.PARSER.requiredField("shield", m -> m.shield.getId()),
+    ModifierId.PARSER.requiredField("shield", m -> m.shield.getModifierId()),
     LevelingInt.LOADABLE.requiredField("grant", ShareDurabilityModule::grant),
     LevelingInt.LOADABLE.requiredField("consume", ShareDurabilityModule::consume),
     ShareDurabilityModule::new);
@@ -113,7 +113,7 @@ public record ShareDurabilityModule(LazyModifier shield, LevelingInt grant, Leve
           // if the modifier is missing, add it
           if (entry.getLevel() == 0) {
             entry = new ModifierEntry(shield, 1);
-            choice.addModifier(shield.getId(), 1);
+            choice.addModifier(shield.getModifierId(), 1);
           }
           // update the durability bar
           shield.getHook(ModifierHooks.CAPACITY_BAR).addAmount(choice, entry, granted * amount);

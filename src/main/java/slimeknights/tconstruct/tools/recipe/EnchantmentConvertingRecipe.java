@@ -1,17 +1,20 @@
 package slimeknights.tconstruct.tools.recipe;
 
 import lombok.Getter;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
 import slimeknights.mantle.data.loadable.field.ContextKey;
 import slimeknights.mantle.data.loadable.primitive.BooleanLoadable;
 import slimeknights.mantle.data.loadable.primitive.StringLoadable;
@@ -35,6 +38,7 @@ import slimeknights.tconstruct.tools.item.ModifierCrystalItem;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -84,7 +88,12 @@ public class EnchantmentConvertingRecipe extends AbstractWorktableRecipe {
 
   /** Gets the enchantment map from the given stack */
   private Map<Enchantment,Integer> getEnchantments(ItemStack stack) {
-    return EnchantmentHelper.deserializeEnchantments(matchBook ? EnchantedBookItem.getEnchantments(stack) : stack.getEnchantmentTags());
+    Map<Enchantment,Integer> enchantments = new HashMap<>();
+    ItemEnchantments itemEnchantments = EnchantmentHelper.getEnchantmentsForCrafting(stack);
+    for (var entry : itemEnchantments.entrySet()) {
+      enchantments.put(entry.getKey().value(), entry.getIntValue());
+    }
+    return enchantments;
   }
 
 
@@ -95,7 +104,7 @@ public class EnchantmentConvertingRecipe extends AbstractWorktableRecipe {
     // ensure we have at least one supported enchantment
     if (inv != null && getEnchantments(inv.getTinkerableStack()).entrySet().stream().noneMatch(entry -> {
       Modifier modifier = ModifierManager.INSTANCE.get(entry.getKey());
-      return modifier != null && modifierPredicate.matches(modifier.getId());
+      return modifier != null && modifierPredicate.matches(modifier.getModifierId());
     })) {
       return NO_ENCHANTMENT;
     }
@@ -123,7 +132,7 @@ public class EnchantmentConvertingRecipe extends AbstractWorktableRecipe {
   /** Gets a list of all modifiers that match this recipe, set to level 1 for display */
   private List<ModifierEntry> getMatchingModifiers() {
     return ModifierRecipeLookup.getAllRecipeModifiers()
-      .filter(modifier -> modifierPredicate.matches(modifier.getId()) && ModifierManager.INSTANCE.hasEnchantment(modifier))
+      .filter(modifier -> modifierPredicate.matches(modifier.getModifierId()) && ModifierManager.INSTANCE.hasEnchantment(modifier))
       .map(mod -> new ModifierEntry(mod, 1)).toList();
   }
 
@@ -133,7 +142,7 @@ public class EnchantmentConvertingRecipe extends AbstractWorktableRecipe {
       // map all enchantments to an equal level modifier
       return getEnchantments(inv.getTinkerableStack()).entrySet().stream().map(entry -> {
         Modifier modifier = ModifierManager.INSTANCE.get(entry.getKey());
-        if (modifier != null && modifierPredicate.matches(modifier.getId())) {
+        if (modifier != null && modifierPredicate.matches(modifier.getModifierId())) {
           return new ModifierEntry(modifier, returnInput ? 1 : entry.getValue());
         }
         return null;
@@ -213,16 +222,18 @@ public class EnchantmentConvertingRecipe extends AbstractWorktableRecipe {
       ItemStack unenchanted;
       if (matchBook && enchantments.isEmpty()) {
         unenchanted = new ItemStack(Items.BOOK);
-        if (current.hasCustomHoverName()) {
-          unenchanted.setHoverName(current.getHoverName());
+        if (current.has(DataComponents.CUSTOM_NAME)) {
+          unenchanted.set(DataComponents.CUSTOM_NAME, current.get(DataComponents.CUSTOM_NAME));
         }
       } else {
         unenchanted = current.copy();
+        ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+        enchantments.forEach((enchantment, enchantmentLevel) -> mutable.set(Holder.direct(enchantment), enchantmentLevel));
         if (matchBook) {
-          // for some dumb reason setEnchantments for a book just adds them instead of setting them
-          unenchanted.removeTagKey("StoredEnchantments");
+          unenchanted.set(DataComponents.STORED_ENCHANTMENTS, mutable.toImmutable());
+        } else {
+          unenchanted.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
         }
-        EnchantmentHelper.setEnchantments(enchantments, unenchanted);
       }
       inv.giveItem(unenchanted);
     }
@@ -263,7 +274,7 @@ public class EnchantmentConvertingRecipe extends AbstractWorktableRecipe {
       Set<ModifierId> modifiers = getMatchingModifiers().stream().map(ModifierEntry::getId).collect(Collectors.toSet());
       tools = ModifierManager.INSTANCE.getEquivalentEnchantments(modifiers::contains)
         .flatMap(enchantment -> IntStream.rangeClosed(1, enchantment.getMaxLevel())
-          .mapToObj(level -> EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment, level))))
+          .mapToObj(level -> EnchantedBookItem.createForEnchantment(new EnchantmentInstance(Holder.direct(enchantment), level))))
         .toList();
     }
     return tools;
@@ -278,7 +289,7 @@ public class EnchantmentConvertingRecipe extends AbstractWorktableRecipe {
   /** Gets a list of all enchantable tools. This is expensive, but only needs to be done once fortunately. */
   private static List<ItemStack> getAllEnchantableTools() {
     if (ALL_ENCHANTABLE_TOOLS == null) {
-      ALL_ENCHANTABLE_TOOLS = ForgeRegistries.ITEMS.getValues().stream().map(item -> {
+      ALL_ENCHANTABLE_TOOLS = BuiltInRegistries.ITEM.stream().map(item -> {
         if (item != Items.BOOK) {
           ItemStack stack = new ItemStack(item);
           if (stack.isEnchantable()) {

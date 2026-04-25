@@ -1,10 +1,12 @@
 package slimeknights.tconstruct.library.modifiers.fluid.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.Entity;
@@ -12,7 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LevelEvent;
@@ -21,8 +23,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootParams.Builder;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import slimeknights.mantle.data.loadable.Loadables;
 import slimeknights.mantle.data.loadable.primitive.FloatLoadable;
 import slimeknights.mantle.data.loadable.primitive.IntLoadable;
@@ -86,7 +88,9 @@ public record BreakBlockFluidEffect(float hardness, Map<Enchantment,Integer> enc
         ItemStack fakeTool = ItemStack.EMPTY;
         if (!enchantments.isEmpty()) {
           fakeTool = new ItemStack(Items.STICK);
-          EnchantmentHelper.setEnchantments(enchantments, fakeTool);
+          ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+          enchantments.forEach((enchantment, enchantmentLevel) -> mutable.set(Holder.direct(enchantment), enchantmentLevel));
+          fakeTool.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
         }
 
         // ensures tile entity is fetched so its around for afterBlockBreak
@@ -141,7 +145,7 @@ public record BreakBlockFluidEffect(float hardness, Map<Enchantment,Integer> enc
       translationKey += ".enchanted";
       Component enchantments = enchantments().entrySet().stream().<Component>map(entry -> {
         Enchantment enchantment = entry.getKey();
-        MutableComponent component = Component.translatable(enchantment.getDescriptionId());
+        MutableComponent component = enchantment.description().copy();
         if (enchantment.getMaxLevel() != 1) {
           component.append(CommonComponents.SPACE).append(Component.translatable("enchantment.level." + entry.getValue()));
         }

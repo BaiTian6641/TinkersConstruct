@@ -25,12 +25,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderHighlightEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent.Stage;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderHighlightEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.common.TinkerTags;
 import slimeknights.tconstruct.library.tools.definition.module.ToolHooks;
@@ -40,11 +41,12 @@ import slimeknights.tconstruct.library.tools.definition.module.mining.IsEffectiv
 import slimeknights.tconstruct.library.tools.nbt.ToolStack;
 import slimeknights.tconstruct.library.utils.BlockSideHitListener;
 
+import java.lang.reflect.Field;
 import java.util.Iterator;
 
-@Mod.EventBusSubscriber(modid = TConstruct.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = TConstruct.MOD_ID, value = Dist.CLIENT, bus = Bus.GAME)
 public class ToolRenderEvents {
-  /** Maximum number of blocks from the iterator to render */
+  /** Maximum number of blocks from the iterator to render. */
   private static final int MAX_BLOCKS = 60;
 
   /**
@@ -59,17 +61,14 @@ public class ToolRenderEvents {
     if (world == null || player == null) {
       return;
     }
-    // must have the right tags
     ItemStack stack = player.getMainHandItem();
     if (stack.isEmpty() || !stack.is(TinkerTags.Items.MODIFIABLE)) {
       return;
     }
-    // must be targeting a block
     HitResult result = Minecraft.getInstance().hitResult;
     if (result == null || result.getType() != Type.BLOCK) {
       return;
     }
-    // must not be broken, must be right interface
     ToolStack tool = ToolStack.from(stack);
     if (tool.isBroken()) {
       return;
@@ -78,7 +77,6 @@ public class ToolRenderEvents {
     BlockPos origin = blockTrace.getBlockPos();
     BlockState state = world.getBlockState(origin);
     AOEMatchType matchType = AOEMatchType.BREAKING;
-    // if we have any modifier that has an AOE interaction, make our match type more liberal
     if (tool.getModifiers().has(TinkerTags.Modifiers.AOE_INTERACTION)) {
       matchType = AOEMatchType.DISPLAY;
     } else if (!IsEffectiveToolHook.isEffective(tool, state)) {
@@ -90,14 +88,12 @@ public class ToolRenderEvents {
       return;
     }
 
-    // set up renderer
     LevelRenderer worldRender = event.getLevelRenderer();
     PoseStack matrices = event.getPoseStack();
-    MultiBufferSource.BufferSource buffers = worldRender.renderBuffers.bufferSource();
+    MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
     VertexConsumer vertexBuilder = buffers.getBuffer(RenderType.lines());
     matrices.pushPose();
 
-    // start drawing
     Camera renderInfo = Minecraft.getInstance().gameRenderer.getMainCamera();
     Entity viewEntity = renderInfo.getEntity();
     Vec3 vector3d = renderInfo.getPosition();
@@ -109,9 +105,22 @@ public class ToolRenderEvents {
       BlockPos pos = extraBlocks.next();
       if (world.getWorldBorder().isWithinBounds(pos)) {
         rendered++;
-        worldRender.renderHitOutline(matrices, vertexBuilder, viewEntity, x, y, z, pos, world.getBlockState(pos));
+        BlockState outlineState = world.getBlockState(pos);
+        LevelRenderer.renderVoxelShape(
+          matrices,
+          vertexBuilder,
+          outlineState.getShape(world, pos, CollisionContext.of(viewEntity)),
+          pos.getX() - x,
+          pos.getY() - y,
+          pos.getZ() - z,
+          0.0f,
+          0.0f,
+          0.0f,
+          0.4f,
+          false
+        );
       }
-    } while(rendered < MAX_BLOCKS && extraBlocks.hasNext());
+    } while (rendered < MAX_BLOCKS && extraBlocks.hasNext());
     matrices.popPose();
     buffers.endBatch();
   }
@@ -119,12 +128,10 @@ public class ToolRenderEvents {
   /** Renders the block damage process on the extra blocks */
   @SubscribeEvent
   static void renderBlockDamageProgress(RenderLevelStageEvent event) {
-    // TODO: validate this is the right stage for block breaking particles, maybe I want a bit earlier
-    if (event.getStage() != Stage.AFTER_TRIPWIRE_BLOCKS) {
+    if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS) {
       return;
     }
 
-    // validate required variables are set
     MultiPlayerGameMode controller = Minecraft.getInstance().gameMode;
     if (controller == null || !controller.isDestroying()) {
       return;
@@ -134,37 +141,27 @@ public class ToolRenderEvents {
     if (world == null || player == null || Minecraft.getInstance().getCameraEntity() == null) {
       return;
     }
-    // must have the right tags
     ItemStack stack = player.getMainHandItem();
     if (stack.isEmpty() || !stack.is(TinkerTags.Items.HARVEST)) {
       return;
     }
-    // must be targeting a block
     HitResult result = Minecraft.getInstance().hitResult;
     if (result == null || result.getType() != Type.BLOCK) {
       return;
     }
-    // must not be broken, must be right interface
     ToolStack tool = ToolStack.from(stack);
     if (tool.isBroken()) {
       return;
     }
-    // find breaking progress
+
     BlockHitResult blockTrace = (BlockHitResult)result;
     BlockPos target = blockTrace.getBlockPos();
-    BlockDestructionProgress progress = null;
-    for (Int2ObjectMap.Entry<BlockDestructionProgress> entry : Minecraft.getInstance().levelRenderer.destroyingBlocks.int2ObjectEntrySet()) {
-      if (entry.getValue().getPos().equals(target)) {
-        progress = entry.getValue();
-        break;
-      }
-    }
+    BlockDestructionProgress progress = findDestructionProgress(Minecraft.getInstance().levelRenderer, target);
     if (progress == null) {
       return;
     }
-    // determine extra blocks to highlight
+
     BlockState state = world.getBlockState(target);
-    // must not be broken, and the tool definition must be effective
     if (!IsEffectiveToolHook.isEffective(tool, state)) {
       return;
     }
@@ -174,13 +171,11 @@ public class ToolRenderEvents {
       return;
     }
 
-    // set up buffers
     PoseStack matrices = event.getPoseStack();
     matrices.pushPose();
-    MultiBufferSource.BufferSource vertices = event.getLevelRenderer().renderBuffers.crumblingBufferSource();
+    MultiBufferSource.BufferSource vertices = Minecraft.getInstance().renderBuffers().crumblingBufferSource();
     VertexConsumer vertexBuilder = vertices.getBuffer(ModelBakery.DESTROY_TYPES.get(progress.getProgress()));
 
-    // finally, render the blocks
     Camera renderInfo = Minecraft.getInstance().gameRenderer.getMainCamera();
     double x = renderInfo.getPosition().x;
     double y = renderInfo.getPosition().y;
@@ -192,14 +187,43 @@ public class ToolRenderEvents {
       matrices.pushPose();
       matrices.translate(pos.getX() - x, pos.getY() - y, pos.getZ() - z);
       PoseStack.Pose entry = matrices.last();
-      VertexConsumer blockBuilder = new SheetedDecalTextureGenerator(vertexBuilder, entry.pose(), entry.normal(), 1);
-      // TODO: is it practical to fetch model data here?
+      VertexConsumer blockBuilder = new SheetedDecalTextureGenerator(vertexBuilder, entry, 1.0f);
       dispatcher.renderBreakingTexture(world.getBlockState(pos), pos, world, matrices, blockBuilder);
       matrices.popPose();
       rendered++;
     } while (rendered < MAX_BLOCKS && extraBlocks.hasNext());
-    // finish rendering
     matrices.popPose();
     vertices.endBatch();
+  }
+
+  /** Finds current block destruction progress map via reflection across mapping name drift. */
+  @SuppressWarnings("unchecked")
+  private static BlockDestructionProgress findDestructionProgress(LevelRenderer renderer, BlockPos target) {
+    Int2ObjectMap<BlockDestructionProgress> map = null;
+    try {
+      Field field;
+      try {
+        field = LevelRenderer.class.getDeclaredField("destroyingBlocks");
+      } catch (NoSuchFieldException ex) {
+        field = LevelRenderer.class.getDeclaredField("destructionProgress");
+      }
+      field.setAccessible(true);
+      Object value = field.get(renderer);
+      if (value instanceof Int2ObjectMap<?>) {
+        map = (Int2ObjectMap<BlockDestructionProgress>)value;
+      }
+    } catch (ReflectiveOperationException ignored) {
+      return null;
+    }
+    if (map == null) {
+      return null;
+    }
+    for (Int2ObjectMap.Entry<BlockDestructionProgress> entry : map.int2ObjectEntrySet()) {
+      BlockDestructionProgress progress = entry.getValue();
+      if (progress.getPos().equals(target)) {
+        return progress;
+      }
+    }
+    return null;
   }
 }

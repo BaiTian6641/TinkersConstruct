@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -73,11 +74,12 @@ public record MeleeAttributeModule(String unique, Attribute attribute, UUID uuid
     if (condition.matches(tool, modifier)) {
       LivingEntity target = context.getLivingTarget();
       if (target != null) {
-        AttributeInstance instance = target.getAttribute(attribute);
+        AttributeInstance instance = target.getAttribute(BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute));
         if (instance != null) {
           // ensure we don't already have the modifier from someone misusing melee hooks or simultaneous attacks
-          instance.removeModifier(uuid);
-          instance.addTransientModifier(new AttributeModifier(uuid, unique, amount.compute(modifier.getEffectiveLevel()), operation));
+          ResourceLocation id = ResourceLocation.fromNamespaceAndPath("tconstruct", uuid.toString());
+          instance.removeModifier(id);
+          instance.addTransientModifier(new AttributeModifier(id, amount.compute(modifier.getEffectiveLevel()), operation));
         }
       }
     }
@@ -86,9 +88,9 @@ public record MeleeAttributeModule(String unique, Attribute attribute, UUID uuid
 
   private void removeAttribute(@Nullable LivingEntity target) {
     if (target != null) {
-      AttributeInstance instance = target.getAttribute(attribute);
+      AttributeInstance instance = target.getAttribute(BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute));
       if (instance != null) {
-        instance.removeModifier(uuid);
+        instance.removeModifier(ResourceLocation.fromNamespaceAndPath("tconstruct", uuid.toString()));
       }
     }
   }

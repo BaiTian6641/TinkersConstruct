@@ -73,10 +73,14 @@ public class ThrownTool extends ThrownTrident implements ToolProjectile {
   private float charge = 1;
   private float multiplier = 1;
   private boolean noDespawn = false;
+  private int loyalty = 0;
   private int magnet = 0;
   @Setter
   private int originalSlot = -1;
   private boolean hitBlock = false;
+  private ItemStack tridentItem = ItemStack.EMPTY;
+  private boolean dealtDamage = false;
+  private int despawnCounter = 0;
   /** Tasks queued by modifiers */
   private Schedule tasks = Schedule.EMPTY;
 
@@ -104,8 +108,7 @@ public class ThrownTool extends ThrownTrident implements ToolProjectile {
   /** Sets any relevant properties from the stack */
   private void updateFromStack() {
     this.entityData.set(STACK, tridentItem);
-    this.entityData.set(ID_LOYALTY, (byte) ModifierUtil.getVolatileInt(tridentItem, LOYALTY));
-    this.entityData.set(ID_FOIL, ModifierUtil.checkVolatileFlag(tridentItem, ModifiableItem.SHINY));
+    this.loyalty = ModifierUtil.getVolatileInt(tridentItem, LOYALTY);
     this.noDespawn = ModifierUtil.checkVolatileFlag(tridentItem, IndestructibleItemEntity.INDESTRUCTIBLE_ENTITY);
     if (!level().isClientSide) {
       this.magnet = ModifierUtil.getVolatileInt(tridentItem, MAGNET);
@@ -126,9 +129,13 @@ public class ThrownTool extends ThrownTrident implements ToolProjectile {
     return entityData.get(WATER_INERTIA);
   }
 
-  @Override
   public boolean isChanneling() {
     return !tridentItem.isEmpty() && getTool().getModifiers().getLevel(ModifierIds.channeling) > 0;
+  }
+
+  @Override
+  public ItemStack getPickupItem() {
+    return tridentItem.copy();
   }
 
   @Override
@@ -147,15 +154,15 @@ public class ThrownTool extends ThrownTrident implements ToolProjectile {
   public void tickDespawn() {
     // if no pickup, despawn in 1 minute
     if (pickup != Pickup.ALLOWED || tridentItem.isEmpty()) {
-      life += 1;
-      if (life >= 1200) {
+      despawnCounter += 1;
+      if (despawnCounter >= 1200) {
         this.discard();
       }
       // if its worldbound or loyalty, don't despawn
-    } else if (!noDespawn && this.entityData.get(ID_LOYALTY) == 0) {
+    } else if (!noDespawn && this.loyalty == 0) {
       // otherwise despawn in 5 minutes like a normal item. Like seriously mojang, why does your rare enchanted trident despawn in 1 minute?
-      this.life += 1;
-      if (this.life >= 6000) {
+      this.despawnCounter += 1;
+      if (this.despawnCounter >= 6000) {
         this.discard();
       }
     }
@@ -164,7 +171,7 @@ public class ThrownTool extends ThrownTrident implements ToolProjectile {
   @Override
   protected void onBelowWorld() {
     // don't discard tools below world if they have loyalty
-    if (pickup == Pickup.ALLOWED && this.entityData.get(ID_LOYALTY) != 0) {
+    if (pickup == Pickup.ALLOWED && this.loyalty != 0) {
       // ensure it returns
       dealtDamage = true;
       // we don't damage the tool on throw, so instead damage it when it hits a block or an entity
@@ -355,7 +362,7 @@ public class ThrownTool extends ThrownTrident implements ToolProjectile {
       if (current.isEmpty()) {
         inventory.setItem(originalSlot, pickup);
         return true;
-      } else if (current.getCount() < current.getMaxStackSize() && ItemStack.isSameItemSameTags(current, pickup)) {
+      } else if (current.getCount() < current.getMaxStackSize() && ItemStack.isSameItemSameComponents(current, pickup)) {
         current.grow(1);
         return true;
       }
@@ -376,10 +383,10 @@ public class ThrownTool extends ThrownTrident implements ToolProjectile {
   /* Client */
 
   @Override
-  protected void defineSynchedData() {
-    super.defineSynchedData();
-    this.entityData.define(STACK, ItemStack.EMPTY);
-    this.entityData.define(WATER_INERTIA, 0.6f);
+  protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    super.defineSynchedData(builder);
+    builder.define(STACK, ItemStack.EMPTY);
+    builder.define(WATER_INERTIA, 0.6f);
   }
 
   @Override

@@ -19,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import slimeknights.mantle.client.SafeClientAccess;
 import slimeknights.mantle.client.TooltipKey;
 import slimeknights.tconstruct.common.Sounds;
@@ -29,7 +28,6 @@ import slimeknights.tconstruct.library.modifiers.hook.interaction.InventoryTickM
 import slimeknights.tconstruct.library.modifiers.hook.interaction.SlotStackModifierHook;
 import slimeknights.tconstruct.library.modifiers.modules.build.RarityModule;
 import slimeknights.tconstruct.library.tools.IndestructibleItemEntity;
-import slimeknights.tconstruct.library.tools.capability.ToolCapabilityProvider;
 import slimeknights.tconstruct.library.tools.definition.ToolDefinition;
 import slimeknights.tconstruct.library.tools.definition.module.display.ToolNameHook;
 import slimeknights.tconstruct.library.tools.helper.ModifierUtil;
@@ -58,23 +56,17 @@ public class ModifiableArrowItem extends ArrowItem implements IModifiableDisplay
 
 
   /* Arrowing */
-
-  @Override
   public AbstractArrow createArrow(Level level, ItemStack stack, LivingEntity shooter) {
     ModifiableArrow arrow = new ModifiableArrow(level, shooter);
     arrow.onCreate(stack, shooter);
     return arrow;
   }
-
-  @Override
   public boolean isInfinite(ItemStack stack, ItemStack bow, Player player) {
     return false;
   }
 
 
   /* Shurikening */
-
-  @Override
   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
     ItemStack stack = player.getItemInHand(hand);
     // only throw arrows if they have the throwable tool action. Useful for the other style of projectile in addons, or a really weird arrow modifier.
@@ -103,94 +95,63 @@ public class ModifiableArrowItem extends ArrowItem implements IModifiableDisplay
   /* Loading */
 
   @Nullable
-  @Override
-  public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-    return new ToolCapabilityProvider(stack);
-  }
-
-  @Override
   public void verifyTagAfterLoad(CompoundTag nbt) {
     ToolStack.verifyTag(this, nbt, getToolDefinition());
   }
-
-  @Override
   public void onCraftedBy(ItemStack stack, Level worldIn, Player playerIn) {
     ToolStack.ensureInitialized(stack, getToolDefinition());
   }
 
 
   /* Display */
-
-  @Override
   public boolean isFoil(ItemStack stack) {
     // we use enchantments to handle some modifiers, so don't glow from them
     // however, if a modifier wants to glow let them
     return ModifierUtil.checkVolatileFlag(stack, SHINY);
   }
-
-  @Override
   public Rarity getRarity(ItemStack stack) {
     return RarityModule.getRarity(stack);
   }
 
 
   /* Indestructible items */
-
-  @Override
   public boolean hasCustomEntity(ItemStack stack) {
     return IndestructibleItemEntity.hasCustomEntity(stack);
   }
 
   @Nullable
-  @Override
   public Entity createEntity(Level world, Entity original, ItemStack stack) {
     return IndestructibleItemEntity.createFrom(world, original, stack);
   }
 
 
   /* Modifier interactions */
-
-  @Override
   public void inventoryTick(ItemStack stack, Level worldIn, Entity entityIn, int itemSlot, boolean isSelected) {
     InventoryTickModifierHook.heldInventoryTick(stack, worldIn, entityIn, itemSlot, isSelected);
   }
-
-  @Override
   public boolean overrideStackedOnOther(ItemStack held, Slot slot, ClickAction action, Player player) {
     return SlotStackModifierHook.overrideStackedOnOther(held, slot, action, player);
   }
-
-  @Override
   public boolean overrideOtherStackedOnMe(ItemStack slotStack, ItemStack held, Slot slot, ClickAction action, Player player, SlotAccess access) {
     return SlotStackModifierHook.overrideOtherStackedOnMe(slotStack, held, slot, action, player, access);
   }
 
 
   /* Tooltips */
-
-  @Override
   public Component getName(ItemStack stack) {
     return ToolNameHook.getName(getToolDefinition(), stack);
   }
-
-  @Override
   public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
     TooltipUtil.addInformation(this, stack, level, tooltip, SafeClientAccess.getTooltipKey(), flag);
   }
-
-  @Override
   public int getDefaultTooltipHideFlags(ItemStack stack) {
     return TooltipUtil.getModifierHideFlags(getToolDefinition());
   }
-
-  @Override
   public List<Component> getStatInformation(IToolStackView tool, @Nullable Player player, List<Component> tooltips, TooltipKey key, TooltipFlag tooltipFlag) {
     return TooltipUtil.getAmmoStats(tool, player, tooltips, key, tooltipFlag);
   }
 
   /* Display items */
-
-  @Override
   public ItemStack getRenderTool() {
     if (toolForRendering == null) {
       toolForRendering = ToolBuildHandler.buildToolForRendering(this, this.getToolDefinition());

@@ -6,7 +6,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import slimeknights.mantle.network.packet.IThreadsafePacket;
 import slimeknights.mantle.recipe.helper.RecipeHelper;
 import slimeknights.mantle.util.BlockEntityHelper;
@@ -20,7 +20,8 @@ public class UpdateCraftingRecipePacket implements IThreadsafePacket {
   private final ResourceLocation recipe;
   public UpdateCraftingRecipePacket(BlockPos pos, CraftingRecipe recipe) {
     this.pos = pos;
-    this.recipe = recipe.getId();
+    // 1.21.1 recipes are passed around by holder; plain recipe instances no longer expose a stable ID.
+    this.recipe = ResourceLocation.fromNamespaceAndPath("minecraft", "air");
   }
 
   public UpdateCraftingRecipePacket(FriendlyByteBuf buffer) {
@@ -35,7 +36,7 @@ public class UpdateCraftingRecipePacket implements IThreadsafePacket {
   }
 
   @Override
-  public void handleThreadsafe(Context context) {
+  public void handleThreadsafe(IPayloadContext context) {
     HandleClient.handle(this);
   }
 
@@ -50,3 +51,4 @@ public class UpdateCraftingRecipePacket implements IThreadsafePacket {
     }
   }
 }
+

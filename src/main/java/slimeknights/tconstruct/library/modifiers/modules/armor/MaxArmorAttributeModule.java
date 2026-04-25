@@ -77,12 +77,13 @@ public record MaxArmorAttributeModule(String unique, Attribute attribute, Operat
 
   @Override
   public void updateValue(IToolStackView tool, ModifierEntry modifier, EquipmentChangeContext context, Holder data, float newLevel, float oldLevel) {
-    AttributeInstance instance = context.getEntity().getAttribute(attribute);
+    AttributeInstance instance = context.getEntity().getAttribute(BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute));
     if (instance != null) {
-      instance.removeModifier(uuid);
+      ResourceLocation id = ResourceLocation.fromNamespaceAndPath("tconstruct", uuid.toString());
+      instance.removeModifier(id);
       float attributeValue = amount.computeForLevel(newLevel);
       if (attributeValue != 0) {
-        instance.addTransientModifier(new AttributeModifier(uuid, unique, attributeValue, operation));
+        instance.addTransientModifier(new AttributeModifier(id, attributeValue, operation));
       }
     }
   }

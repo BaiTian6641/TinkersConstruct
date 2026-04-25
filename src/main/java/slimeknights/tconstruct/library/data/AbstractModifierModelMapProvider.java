@@ -62,7 +62,7 @@ public abstract class AbstractModifierModelMapProvider extends GenericDataProvid
   /** Creates a new material for the given texture */
   @SuppressWarnings("removal")
   protected Material material(String texture) {
-    return ModifierModel.blockAtlas(new ResourceLocation(modId, texture));
+    return ModifierModel.blockAtlas(ResourceLocation.fromNamespaceAndPath(modId, texture));
   }
 
   /** Creates a tool texture for the given name */
@@ -97,7 +97,7 @@ public abstract class AbstractModifierModelMapProvider extends GenericDataProvid
   /** Gets the builder for the given tool */
   @SuppressWarnings("removal")
   protected Builder tool(String tool) {
-    return tool(new ResourceLocation(modId, tool));
+    return tool(ResourceLocation.fromNamespaceAndPath(modId, tool));
   }
 
   /** Adds the given model to the tool variant */
@@ -289,12 +289,12 @@ public abstract class AbstractModifierModelMapProvider extends GenericDataProvid
 
     /** Adds the trim model to the tool */
     public Builder trim(ArmorItem.Type type) {
-      return modifier(TinkerModifiers.trim.getId(), TrimModifierModel.Armor.values()[type.ordinal()]);
+      return modifier(new ModifierId(TinkerModifiers.trim.getId()), TrimModifierModel.Armor.values()[type.ordinal()]);
     }
 
     /** Creates a custom trim in the given folder, using the given name for the large variant. */
     public Builder customTrim(String folder, @Nullable String largeTexture) {
-      return modifier(TinkerModifiers.trim.getId(), new TrimModifierModel.Custom(toolMaterial(folder + "/trim").texture(), largeTexture != null ? toolMaterial(folder + '/' + largeTexture).texture() : null));
+      return modifier(new ModifierId(TinkerModifiers.trim.getId()), new TrimModifierModel.Custom(toolMaterial(folder + "/trim").texture(), largeTexture != null ? toolMaterial(folder + '/' + largeTexture).texture() : null));
     }
 
     /** Creates a custom trim in the default folder, using the given name for the large variant */
@@ -304,7 +304,7 @@ public abstract class AbstractModifierModelMapProvider extends GenericDataProvid
 
     /** Adds the embellishment model to the tool */
     public Builder embellishment(String folder, @Nullable String largeFolder) {
-      ModifierId embellishment = TinkerModifiers.embellishment.getId();
+      ModifierId embellishment = new ModifierId(TinkerModifiers.embellishment.getId());
       String name = '/' + suffix(embellishment);
       return modifier(embellishment, new MaterialModifierModel(toolMaterial(folder + name), largeFolder != null ? toolMaterial(largeFolder + name) : null));
     }
@@ -317,7 +317,7 @@ public abstract class AbstractModifierModelMapProvider extends GenericDataProvid
 
     /** Adds the banner model to the tool */
     public Builder banner(@Nullable String smallPrefix, @Nullable String largePrefix) {
-      return modifier(TinkerModifiers.banner.getId(), new BannerModifierModel(
+      return modifier(new ModifierId(TinkerModifiers.banner.getId()), new BannerModifierModel(
         smallPrefix != null ? toolMaterial(smallPrefix).texture() : null,
         largePrefix != null ? toolMaterial(largePrefix).texture() : null
       ));

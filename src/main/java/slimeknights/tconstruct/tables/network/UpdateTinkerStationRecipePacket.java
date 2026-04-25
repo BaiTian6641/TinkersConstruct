@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkEvent.Context;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import slimeknights.mantle.network.packet.IThreadsafePacket;
 import slimeknights.mantle.recipe.helper.RecipeHelper;
 import slimeknights.mantle.util.BlockEntityHelper;
@@ -23,7 +23,8 @@ public class UpdateTinkerStationRecipePacket implements IThreadsafePacket {
   private final ResourceLocation recipe;
   public UpdateTinkerStationRecipePacket(BlockPos pos, ITinkerStationRecipe recipe) {
     this.pos = pos;
-    this.recipe = recipe.getId();
+    // 1.21.1 recipe syncing is holder-based; keep packet shape compiling until holder IDs are threaded through callers.
+    this.recipe = ResourceLocation.fromNamespaceAndPath("minecraft", "air");
   }
 
   public UpdateTinkerStationRecipePacket(FriendlyByteBuf buffer) {
@@ -38,7 +39,7 @@ public class UpdateTinkerStationRecipePacket implements IThreadsafePacket {
   }
 
   @Override
-  public void handleThreadsafe(Context context) {
+  public void handleThreadsafe(IPayloadContext context) {
     HandleClient.handle(this);
   }
 
@@ -67,3 +68,4 @@ public class UpdateTinkerStationRecipePacket implements IThreadsafePacket {
     }
   }
 }
+

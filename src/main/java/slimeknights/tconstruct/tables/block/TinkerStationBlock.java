@@ -5,6 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -41,7 +43,7 @@ public class TinkerStationBlock extends RetexturedTableBlock {
   @Override
   public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
     super.setPlacedBy(level, pos, state, placer, stack);
-    if (stack.hasTag() && level.getBlockEntity(pos) instanceof TinkerStationBlockEntity be) {
+    if (!stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).isEmpty() && level.getBlockEntity(pos) instanceof TinkerStationBlockEntity be) {
       // try block first
       String block = RetexturedHelper.getTextureName(stack);
       if (!block.isEmpty()) {

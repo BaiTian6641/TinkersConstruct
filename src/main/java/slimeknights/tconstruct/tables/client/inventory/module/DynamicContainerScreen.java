@@ -54,6 +54,14 @@ public class DynamicContainerScreen<P extends MultiModuleScreen<?>, C extends Ab
     this.lastSlotId = this.slotCount;
   }
 
+  public int getPanelImageHeight() {
+    return this.imageHeight;
+  }
+
+  public void setPanelImageHeight(int imageHeight) {
+    this.imageHeight = imageHeight;
+  }
+
   @Override
   public void updatePosition(int parentX, int parentY, int parentSizeX, int parentSizeY) {
     this.leftPos = parentX + xOffset;
@@ -117,13 +125,12 @@ public class DynamicContainerScreen<P extends MultiModuleScreen<?>, C extends Ab
     return mouseX >= this.slider.xPos && mouseY >= this.slider.yPos && mouseX <= this.slider.xPos + this.slider.width && mouseY <= this.slider.yPos + this.slider.height;
   }
 
-  @Override
-  public boolean handleMouseScrolled(double mouseX, double mouseY, double scrollData) {
+  public boolean handleMouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
     if (!this.sliderActive) {
       return false;
     }
 
-    return this.slider.mouseScrolled(scrollData, !this.isMouseOverFullSlot(mouseX, mouseY) && this.isMouseInModule((int) mouseX, (int) mouseY));
+    return this.slider.mouseScrolled(vertical, !this.isMouseOverFullSlot(mouseX, mouseY) && this.isMouseInModule((int) mouseX, (int) mouseY));
   }
 
   public void update(int mouseX, int mouseY) {
@@ -156,19 +163,10 @@ public class DynamicContainerScreen<P extends MultiModuleScreen<?>, C extends Ab
     this.firstSlotId = this.slider.getValue() * this.columns;
     this.lastSlotId = Math.min(this.slotCount, this.firstSlotId + this.rows * this.columns);
     if (oldFirstSlot != this.firstSlotId || oldLastSlot != this.lastSlotId) {
-      for (Slot slot : this.container.slots) {
-        if (this.shouldDrawSlot(slot)) {
-          // calc position of the slot
-          int offset = slot.getSlotIndex() - this.firstSlotId;
-          int x = (offset % this.columns) * DynamicContainerScreen.slot.w;
-          int y = (offset / this.columns) * DynamicContainerScreen.slot.h;
-
-          slot.x = xOffset + x + 1;
-          slot.y = yOffset + y + 1;
-        } else {
-          slot.x = 0;
-          slot.y = 0;
-        }
+      // Slot coordinates are immutable in 1.21.1; rendering and interactions are now gated by shouldDrawSlot.
+      // Keep this block to preserve update side effects for callers.
+      for (Slot ignored : this.container.slots) {
+        // no-op
       }
     }
   }

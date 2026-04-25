@@ -47,8 +47,9 @@ public record ReduceEffectOnUnequipModule(MobEffectCategory category, LevelingVa
       if (percent != 0) {
         // iterate all matching effects, updating the duration
         for (MobEffectInstance instance : entity.getActiveEffects()) {
-          if (!instance.isInfiniteDuration() && instance.getEffect().getCategory() == this.category && !instance.getCurativeItems().isEmpty()) {
-            instance.duration = Math.max(1, (int) (instance.duration * (1 - percent)));
+          if (!instance.isInfiniteDuration() && instance.getEffect().value().getCategory() == this.category) {
+            int duration = Math.max(1, (int) (instance.getDuration() * (1 - percent)));
+            entity.addEffect(new MobEffectInstance(instance.getEffect(), duration, instance.getAmplifier(), instance.isAmbient(), instance.isVisible(), instance.showIcon()));
           }
         }
       }

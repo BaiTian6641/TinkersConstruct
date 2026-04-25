@@ -1,11 +1,11 @@
 package slimeknights.tconstruct.tools.modules.ranged.ammo;
 
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -15,8 +15,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.PotionUtils;
-import net.minecraft.world.item.alchemy.Potions;
+import slimeknights.tconstruct.compat.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.phys.EntityHitResult;
 import slimeknights.mantle.client.TooltipKey;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
@@ -65,7 +64,7 @@ public enum TippedModule implements ModifierModule, ProjectileLaunchModifierHook
 
   @Override
   public void onProjectileShoot(IToolStackView tool, ModifierEntry modifier, @Nullable LivingEntity shooter, ItemStack ammo, Projectile projectile, @Nullable AbstractArrow arrow, ModDataNBT persistentData, boolean primary) {
-    ResourceLocation key = modifier.getId();
+    ResourceLocation key = modifier.getId().getLocation();
     IModDataView toolData = tool.getPersistentData();
     if (toolData.contains(key, Tag.TAG_STRING)) {
       persistentData.putString(key, toolData.getString(key));
@@ -89,7 +88,7 @@ public enum TippedModule implements ModifierModule, ProjectileLaunchModifierHook
 
   @Override
   public boolean onProjectileHitEntity(ModifierNBT modifiers, ModDataNBT persistentData, ModifierEntry modifier, Projectile projectile, EntityHitResult hit, @Nullable LivingEntity attacker, @Nullable LivingEntity target) {
-    ResourceLocation key = modifier.getId();
+    ResourceLocation key = modifier.getId().getLocation();
     if (target != null && persistentData.contains(key, Tag.TAG_STRING)) {
       ResourceLocation id = ResourceLocation.tryParse(persistentData.getString(key));
       if (id != null) {
@@ -99,9 +98,9 @@ public enum TippedModule implements ModifierModule, ProjectileLaunchModifierHook
         target.invulnerableTime = 0;
         // not a problem if the ID is invalid, will just do nothing
         for (MobEffectInstance instance : BuiltInRegistries.POTION.get(id).getEffects()) {
-          MobEffect effect = instance.getEffect();
-          if (effect.isInstantenous()) {
-            effect.applyInstantenousEffect(projectile, projectile.getOwner(), target, instance.getAmplifier(), 1f / (divisor * 0.75f));
+          Holder<net.minecraft.world.effect.MobEffect> effect = instance.getEffect();
+          if (effect.value().isInstantenous()) {
+            effect.value().applyInstantenousEffect(projectile, projectile.getOwner(), target, instance.getAmplifier(), 1f / (divisor * 0.75f));
           } else {
             target.addEffect(new MobEffectInstance(instance.getEffect(), Math.max(instance.mapDuration(i -> i / divisor), 1), instance.getAmplifier(), instance.isAmbient(), instance.isVisible()), source);
           }
@@ -117,13 +116,13 @@ public enum TippedModule implements ModifierModule, ProjectileLaunchModifierHook
 
   @Override
   public void addTooltip(IToolStackView tool, ModifierEntry modifier, @Nullable Player player, List<Component> tooltip, TooltipKey tooltipKey, TooltipFlag tooltipFlag) {
-    ResourceLocation key = modifier.getId();
+    ResourceLocation key = modifier.getId().getLocation();
     IModDataView toolData = tool.getPersistentData();
     if (toolData.contains(key, Tag.TAG_STRING)) {
       ResourceLocation id = ResourceLocation.tryParse(toolData.getString(key));
       if (id != null) {
         Potion potion = BuiltInRegistries.POTION.get(id);
-        if (potion != Potions.EMPTY) {
+        if (!potion.getEffects().isEmpty()) {
           PotionUtils.getColor(potion);
           PotionUtils.addPotionTooltip(potion.getEffects(), tooltip, 1f / getDivisor(modifier));
         }
@@ -133,17 +132,17 @@ public enum TippedModule implements ModifierModule, ProjectileLaunchModifierHook
 
   @Override
   public Component getDisplayName(IToolStackView tool, ModifierEntry entry, Component name, @Nullable RegistryAccess access) {
-    ResourceLocation key = entry.getId();
+    ResourceLocation key = entry.getId().getLocation();
     IModDataView toolData = tool.getPersistentData();
     if (toolData.contains(key, Tag.TAG_STRING)) {
       ResourceLocation id = ResourceLocation.tryParse(toolData.getString(key));
       if (id != null) {
         Potion potion = BuiltInRegistries.POTION.get(id);
-        if (potion != Potions.EMPTY) {
+        if (!potion.getEffects().isEmpty()) {
           // formats as Tipped <level> (<potion>)
           return Component.translatable(FORMAT,
             RomanNumeralHelper.getNumeral(entry.getLevel()),
-            Component.translatable(potion.getName("item.minecraft.potion.effect."))
+            Component.translatable("item.minecraft.potion.effect." + id.getPath())
           ).withStyle(style -> style.withColor(PotionUtils.getColor(potion)));
         }
       }

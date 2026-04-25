@@ -1,12 +1,14 @@
 package slimeknights.tconstruct.library.recipe.alloying;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeInput;
 import slimeknights.mantle.recipe.container.IEmptyContainer;
 
 /**
  * Inventory interface for the sake of alloying
  */
-public interface IAlloyTank extends IEmptyContainer {
+public interface IAlloyTank extends IEmptyContainer, RecipeInput {
   /**
    * Gets the current temperature of this alloy tank
    * @return  Temperature
@@ -33,4 +35,19 @@ public interface IAlloyTank extends IEmptyContainer {
    * @return true if the recipe will fit
    */
   boolean canFit(FluidStack fluid, int removed);
+
+  @Override
+  default int size() {
+    return getContainerSize();
+  }
+
+  @Override
+  default boolean isEmpty() {
+    return IEmptyContainer.super.isEmpty();
+  }
+
+  @Override
+  default ItemStack getItem(int index) {
+    return ItemStack.EMPTY;
+  }
 }

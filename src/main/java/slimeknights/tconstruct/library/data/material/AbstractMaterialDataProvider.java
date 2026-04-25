@@ -4,9 +4,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.PackOutput.Target;
-import net.minecraftforge.common.crafting.conditions.AndCondition;
-import net.minecraftforge.common.crafting.conditions.ICondition;
-import net.minecraftforge.common.crafting.conditions.OrCondition;
+import net.neoforged.neoforge.common.conditions.AndCondition;
+import net.neoforged.neoforge.common.conditions.ICondition;
+import net.neoforged.neoforge.common.conditions.OrCondition;
 import slimeknights.mantle.Mantle;
 import slimeknights.mantle.data.GenericDataProvider;
 import slimeknights.mantle.recipe.condition.TagFilledCondition;
@@ -22,6 +22,7 @@ import slimeknights.tconstruct.library.utils.Util;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -81,7 +82,7 @@ public abstract class AbstractMaterialDataProvider extends GenericDataProvider {
   @Override
   public CompletableFuture<?> run(CachedOutput cache) {
     ensureAddMaterialsRun();
-    return allOf(allMaterials.entrySet().stream().map(entry -> saveJson(cache, entry.getKey(), convert(entry.getValue()))));
+    return allOf(allMaterials.entrySet().stream().map(entry -> saveJson(cache, entry.getKey().getLocation(), convert(entry.getValue()))));
   }
 
   /**
@@ -128,7 +129,7 @@ public abstract class AbstractMaterialDataProvider extends GenericDataProvider {
 
   /** Creates a normal material with a condition and a redirect */
   protected void addMaterial(MaterialId location, int tier, int order, boolean craftable, boolean hidden, @Nullable ICondition condition, JsonRedirect... redirect) {
-    addMaterial(new Material(location, tier, order, craftable, hidden), condition, redirect);
+    addMaterial(new Material(location.getLocation(), tier, order, craftable, hidden), condition, redirect);
   }
 
   /** Creates a normal material */
@@ -141,7 +142,7 @@ public abstract class AbstractMaterialDataProvider extends GenericDataProvider {
     ICondition condition = new OrCondition(Stream.concat(
       Stream.of(ConfigEnabledCondition.FORCE_INTEGRATION_MATERIALS),
       Arrays.stream(tagNames).map(AbstractMaterialDataProvider::tagExistsCondition)
-    ).toArray(ICondition[]::new));
+    ).toList());
     addMaterial(location, tier, order, craftable, false, condition);
   }
 
@@ -158,14 +159,11 @@ public abstract class AbstractMaterialDataProvider extends GenericDataProvider {
 
   /** Creates a new compat alloy, enabled if its components are present */
   protected void addCompatAlloy(MaterialId location, int tier, int order, ICondition... alloyConditions) {
-    ICondition condition = new OrCondition(
-      // if forced
+    ICondition condition = new OrCondition(List.of(
       ConfigEnabledCondition.FORCE_INTEGRATION_MATERIALS,
-      // or we have the matching alloy ingot
       tagExistsCondition("ingots/" + location.getPath()),
-      // or we allow ingotless alloys and have all alloy components
-      new AndCondition(Util.prepend(alloyConditions, ConfigEnabledCondition.ALLOW_INGOTLESS_ALLOYS))
-    );
+      new AndCondition(Stream.concat(Stream.of(ConfigEnabledCondition.ALLOW_INGOTLESS_ALLOYS), Arrays.stream(alloyConditions)).toList())
+    ));
     addMaterial(location, tier, order, false, false, condition);
   }
 
@@ -179,7 +177,7 @@ public abstract class AbstractMaterialDataProvider extends GenericDataProvider {
 
   /** Makes a conditional redirect to the given ID */
   protected JsonRedirect conditionalRedirect(MaterialId id, @Nullable ICondition condition) {
-    return new JsonRedirect(id, condition);
+    return new JsonRedirect(id.getLocation(), condition);
   }
 
   /** Makes an unconditional redirect to the given ID */

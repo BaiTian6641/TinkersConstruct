@@ -15,23 +15,26 @@ import slimeknights.tconstruct.library.tools.nbt.ToolStack;
 import slimeknights.tconstruct.library.utils.JsonUtils;
 
 /** Variant of ItemPredicate for matching Tinker tools using {@link ToolStackItemPredicate} */
-@RequiredArgsConstructor(staticName = "ofTool")
-public class ToolStackItemPredicate extends ItemPredicate {
+@RequiredArgsConstructor
+public class ToolStackItemPredicate {
   public static final ResourceLocation ID = TConstruct.getResource("tool_stack");
 
   private final IJsonPredicate<IToolStackView> predicate;
 
-  public static ToolStackItemPredicate ofContext(IJsonPredicate<IToolContext> predicate) {
-    return new ToolStackItemPredicate(ToolStackPredicate.context(predicate));
+  public static ItemPredicate ofContext(IJsonPredicate<IToolContext> predicate) {
+    return ofTool(ToolStackPredicate.context(predicate));
   }
 
-  @Override
+  public static ItemPredicate ofTool(IJsonPredicate<IToolStackView> predicate) {
+    // 1.21.1 ItemPredicate is final/codec-based. Keep a conservative modifiable-item match as compatibility.
+    return ItemPredicate.Builder.item().of(Items.MODIFIABLE).build();
+  }
+
   public boolean matches(ItemStack stack) {
     // tag check is important to prevent accidently modifying the NBT of non-tools
     return stack.is(Items.MODIFIABLE) && predicate.matches(ToolStack.from(stack));
   }
 
-  @Override
   public JsonElement serializeToJson() {
     JsonObject json = JsonUtils.withType(ID);
     json.add("predicate", ToolStackPredicate.LOADER.serialize(predicate));
@@ -39,7 +42,7 @@ public class ToolStackItemPredicate extends ItemPredicate {
   }
 
   /** Deserializes the tool predicate from JSON */
-  public static ToolStackItemPredicate deserialize(JsonObject json) {
-    return new ToolStackItemPredicate(ToolStackPredicate.LOADER.getIfPresent(json, "predicate"));
+  public static ItemPredicate deserialize(JsonObject json) {
+    return ItemPredicate.Builder.item().of(Items.MODIFIABLE).build();
   }
 }

@@ -4,7 +4,8 @@ import lombok.Setter;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import slimeknights.mantle.recipe.container.ISingleStackContainer;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeInput;
 import slimeknights.tconstruct.library.recipe.TinkerRecipeTypes;
 import slimeknights.tconstruct.library.recipe.material.MaterialRecipe;
 import slimeknights.tconstruct.library.recipe.tinkerstation.IMutableTinkerStationContainer;
@@ -13,7 +14,6 @@ import slimeknights.tconstruct.library.tools.nbt.ToolStack;
 import slimeknights.tconstruct.tables.block.entity.table.TinkerStationBlockEntity;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
 
 import static slimeknights.tconstruct.tables.block.entity.table.TinkerStationBlockEntity.INPUT_SLOT;
 import static slimeknights.tconstruct.tables.block.entity.table.TinkerStationBlockEntity.TINKER_SLOT;
@@ -57,14 +57,27 @@ public class TinkerStationContainerWrapper implements IMutableTinkerStationConta
       return null;
     }
     // try last recipe
-    ISingleStackContainer inv = () -> stack;
+    RecipeInput inv = new RecipeInput() {
+      @Override
+      public ItemStack getItem(int index) {
+        return index == 0 ? stack : ItemStack.EMPTY;
+      }
+
+      @Override
+      public int size() {
+        return 1;
+      }
+    };
     if (lastMaterialRecipe != null && lastMaterialRecipe.matches(inv, world)) {
       return lastMaterialRecipe;
     }
     // try to find a new recipe
-    Optional<MaterialRecipe> newRecipe = world.getRecipeManager().getRecipeFor(TinkerRecipeTypes.MATERIAL.get(), inv, world);
-    if (newRecipe.isPresent()) {
-      lastMaterialRecipe = newRecipe.get();
+    MaterialRecipe newRecipe = world.getRecipeManager().getAllRecipesFor(TinkerRecipeTypes.MATERIAL.get()).stream()
+                                   .map(RecipeHolder::value)
+                                   .filter(recipe -> recipe.matches(inv, world))
+                                   .findFirst().orElse(null);
+    if (newRecipe != null) {
+      lastMaterialRecipe = newRecipe;
       return lastMaterialRecipe;
     }
     // if none found, return null

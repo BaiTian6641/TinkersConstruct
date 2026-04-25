@@ -3,8 +3,8 @@ package slimeknights.tconstruct.library.modifiers.fluid.entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import slimeknights.mantle.data.loadable.common.ItemStackLoadable;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
 import slimeknights.tconstruct.library.modifiers.fluid.EffectLevel;
@@ -27,12 +27,11 @@ public record CureEffectsFluidEffect(ItemStack stack) implements FluidEffect<Flu
   public float apply(FluidStack fluid, EffectLevel level, Entity context, FluidAction action) {
     LivingEntity target = context.getLivingTarget();
     if (target != null && level.isFull()) {
-      // when simulating, search the effects list directly for curative effects
-      // may still be wrong if the event cancels things though, no way to safely simulate it
+      // simulate checks whether there is anything to clear
       if (action.simulate()) {
-        return target.getActiveEffects().stream().anyMatch(effect -> effect.isCurativeItem(stack)) ? 1 : 0;
+        return target.getActiveEffects().isEmpty() ? 0 : 1;
       }
-      return target.curePotionEffects(stack) ? 1 : 0;
+      return target.removeAllEffects() ? 1 : 0;
     }
     return 0;
   }

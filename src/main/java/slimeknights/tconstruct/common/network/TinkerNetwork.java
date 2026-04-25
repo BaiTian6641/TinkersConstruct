@@ -2,13 +2,14 @@ package slimeknights.tconstruct.common.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.PacketDistributor;
+import slimeknights.tconstruct.compat.neoforge.network.NetworkDirection;
+import net.neoforged.neoforge.network.PacketDistributor;
 import slimeknights.mantle.network.NetworkWrapper;
 import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.library.materials.definition.UpdateMaterialsPacket;
@@ -147,9 +148,10 @@ public class TinkerNetwork extends NetworkWrapper {
    * @param msg     Packet
    * @param entity  Entity to check
    */
-  @Override
   public void sendToTrackingAndSelf(Object msg, Entity entity) {
-    this.network.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), msg);
+    if (msg instanceof CustomPacketPayload payload) {
+      super.sendToTrackingAndSelf(payload, entity);
+    }
   }
 
   /**
@@ -157,9 +159,10 @@ public class TinkerNetwork extends NetworkWrapper {
    * @param msg     Packet
    * @param entity  Entity to check
    */
-  @Override
   public void sendToTracking(Object msg, Entity entity) {
-    this.network.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), msg);
+    if (msg instanceof CustomPacketPayload payload) {
+      super.sendToTracking(payload, entity);
+    }
   }
 
   /**
@@ -169,11 +172,13 @@ public class TinkerNetwork extends NetworkWrapper {
    * @param msg             Message to send
    */
   public void sendToPlayerList(@Nullable ServerPlayer targetedPlayer, PlayerList playerList, Object msg) {
-    if (targetedPlayer != null) {
-      sendTo(msg, targetedPlayer);
-    } else {
-      for (ServerPlayer player : playerList.getPlayers()) {
-        sendTo(msg, player);
+    if (msg instanceof CustomPacketPayload payload) {
+      if (targetedPlayer != null) {
+        sendTo(payload, targetedPlayer);
+      } else {
+        for (ServerPlayer player : playerList.getPlayers()) {
+          sendTo(payload, player);
+        }
       }
     }
   }

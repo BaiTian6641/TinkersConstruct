@@ -33,12 +33,12 @@ public class EFLNExplosion extends CustomExplosion {
   @Override
   protected void calculateHitBlocks() {
     // optimization: if we are not interacting with blocks, no need to calculate blocks
-    if (!interactsWithBlocks() && !fire) {
+    if (!interactsWithBlocks() && !customFire) {
       return;
     }
 
     // we do a sphere of a certain radius, and check if the blockpos is inside the radius
-    float radius = this.radius * this.radius;
+    float radius = this.customRadius * this.customRadius;
     int range = (int)radius + 1;
 
     Set<BlockPos> set = new HashSet<>();
@@ -48,31 +48,31 @@ public class EFLNExplosion extends CustomExplosion {
           int distance = x * x + y * y + z * z;
           // inside the sphere?
           if (distance <= radius) {
-            BlockPos blockpos = new BlockPos(x, y, z).offset(Mth.floor(this.x), Mth.floor(this.y), Mth.floor(this.z));
+            BlockPos blockpos = new BlockPos(x, y, z).offset(Mth.floor(this.customX), Mth.floor(this.customY), Mth.floor(this.customZ));
             // no air blocks
-            if (this.level.isEmptyBlock(blockpos)) {
+            if (this.customLevel.isEmptyBlock(blockpos)) {
               continue;
             }
 
             // explosion "strength" at the current position
-            float strength = this.radius * (1f - distance / (radius));
-            BlockState blockstate = this.level.getBlockState(blockpos);
+            float strength = this.customRadius * (1f - distance / radius);
+            BlockState blockstate = this.customLevel.getBlockState(blockpos);
 
-            FluidState fluid = this.level.getFluidState(blockpos);
-            float power = Math.max(blockstate.getExplosionResistance(this.level, blockpos, this), fluid.getExplosionResistance(this.level, blockpos, this));
-            if (this.source != null) {
-              power = this.source.getBlockExplosionResistance(this, this.level, blockpos, blockstate, fluid, power);
+            FluidState fluid = this.customLevel.getFluidState(blockpos);
+            float power = Math.max(blockstate.getExplosionResistance(this.customLevel, blockpos, this), fluid.getExplosionResistance(this.customLevel, blockpos, this));
+            if (this.customSource != null) {
+              power = this.customSource.getBlockExplosionResistance(this, this.customLevel, blockpos, blockstate, fluid, power);
             }
 
             strength -= (power + 0.3F) * 0.3F;
 
-            if (strength > 0.0F && (this.source == null || this.source.shouldBlockExplode(this, this.level, blockpos, blockstate, strength))) {
+            if (strength > 0.0F && (this.customSource == null || this.customSource.shouldBlockExplode(this, this.customLevel, blockpos, blockstate, strength))) {
               set.add(blockpos);
             }
           }
         }
       }
     }
-    this.toBlow.addAll(set);
+    this.getToBlow().addAll(set);
   }
 }

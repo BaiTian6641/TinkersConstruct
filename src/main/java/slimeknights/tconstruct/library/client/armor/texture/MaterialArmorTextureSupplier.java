@@ -3,10 +3,12 @@ package slimeknights.tconstruct.library.client.armor.texture;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.Util;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import slimeknights.mantle.data.loadable.Loadables;
 import slimeknights.mantle.data.loadable.field.LoadableField;
 import slimeknights.mantle.data.loadable.primitive.IntLoadable;
@@ -147,7 +149,8 @@ public abstract class MaterialArmorTextureSupplier implements ArmorTextureSuppli
 
     @Override
     protected String getMaterial(ItemStack stack) {
-      CompoundTag tag = stack.getTag();
+      CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+      CompoundTag tag = customData != null ? customData.copyTag() : null;
       if (tag != null && tag.contains(ToolStack.TAG_MATERIALS, Tag.TAG_LIST)) {
         return tag.getList(ToolStack.TAG_MATERIALS, Tag.TAG_STRING).getString(index);
       }

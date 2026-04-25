@@ -2,7 +2,6 @@ package slimeknights.tconstruct.tables.client.inventory.widget;
 
 import net.minecraft.client.gui.GuiGraphics;
 import slimeknights.mantle.client.screen.ElementScreen;
-import slimeknights.mantle.client.screen.ModuleScreen;
 import slimeknights.mantle.client.screen.ScalableElementScreen;
 import slimeknights.mantle.client.screen.Widget;
 import slimeknights.tconstruct.tables.client.inventory.module.GenericScreen;
@@ -41,14 +40,6 @@ public class BorderWidget extends Widget {
 
   public int getHeightWithBorder(int height) {
     return height + this.borderTop.h + this.borderBottom.h;
-  }
-
-  public void updateParent(ModuleScreen<?,?> gui) {
-    gui.leftPos -= this.borderLeft.w;
-    gui.topPos -= this.borderTop.h;
-
-    gui.imageWidth += this.borderLeft.w + this.borderRight.w;
-    gui.imageHeight += this.borderTop.h + this.borderBottom.h;
   }
 
   @Override

@@ -3,8 +3,6 @@ package slimeknights.tconstruct.library.tools.helper;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 
-import static net.minecraft.world.damagesource.CombatRules.getDamageAfterAbsorb;
-
 /**
  * Utinet.minecraft.world.damagesource.CombatRulesation logic
  */
@@ -71,7 +69,7 @@ public class ArmorUtil {
   }
 
   /**
-   * Calculates the final damage for use in {@link net.minecraftforge.event.entity.living.LivingHurtEvent}. Requires applying several inverse functions to cancel out vanilla formulas that are applied later
+   * Calculates the final damage for use in {@link net.neoforged.neoforge.event.entity.living.LivingHurtEvent}. Requires applying several inverse functions to cancel out vanilla formulas that are applied later
    * @param originalDamage     Original damage to be dealt
    * @param armor              Armor amount on the player
    * @param toughness          Armor toughness attribute
@@ -92,7 +90,9 @@ public class ArmorUtil {
     float damage = originalDamage;
     // if there is no armor value though, no work is needed
     if (armor > 0) {
-      damage = getDamageAfterAbsorb(damage, armor, toughness);
+      float armorScale = 2.0f + toughness / 4.0f;
+      float effectiveArmor = Mth.clamp(armor - damage / armorScale, armor * 0.2f, 20.0f);
+      damage *= 1.0f - effectiveArmor / 25.0f;
     }
 
     // next, we want to apply our modifiers bonus M(x), it works out to be a reduction between 0 and 80%

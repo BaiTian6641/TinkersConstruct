@@ -77,7 +77,7 @@ public abstract class AbstractMaterialSpriteProvider {
 
   /** Adds a new material to the data generator */
   protected MaterialSpriteInfoBuilder buildMaterial(MaterialId name) {
-    return buildMaterial((ResourceLocation)name);
+    return buildMaterial(name.getLocation());
   }
 
   /** Adds a new material variant to the data generator */
@@ -175,7 +175,7 @@ public abstract class AbstractMaterialSpriteProvider {
     /** Adds a stat type as supported */
     public MaterialSpriteInfoBuilder statType(MaterialStatType<?>... stats) {
       for (MaterialStatType<?> stat : stats) {
-        statTypes.add(stat.getId());
+        statTypes.add(stat.getIdentifier());
       }
       return this;
     }
@@ -183,7 +183,7 @@ public abstract class AbstractMaterialSpriteProvider {
     /** Adds a stat type as supported */
     public MaterialSpriteInfoBuilder statType(List<? extends MaterialStatType<?>> stats) {
       for (MaterialStatType<?> stat : stats) {
-        statTypes.add(stat.getId());
+        statTypes.add(stat.getIdentifier());
       }
       return this;
     }
@@ -229,7 +229,7 @@ public abstract class AbstractMaterialSpriteProvider {
     public MaterialSpriteInfoBuilder plating() {
       statType(TinkerPartSpriteProvider.ARMOR_PLATING);
       for (MaterialStatType<?> type : PlatingMaterialStats.TYPES) {
-        statType(type.getId());
+        statType(type.getIdentifier());
       }
       repairKit();
       return this;

@@ -60,7 +60,7 @@ public class ModifiersCommand {
       // add modifier
       ToolStack tool = ToolStack.from(stack).copy();
       // add the modifier
-      tool.addModifier(modifier.getId(), level);
+      tool.addModifier(modifier.getModifierId(), level);
       // ensure no modifier problems after adding
       Component toolValidation = tool.tryValidate();
       if (toolValidation != null) {
@@ -92,7 +92,7 @@ public class ModifiersCommand {
       ToolStack original = ToolStack.from(stack);
 
       // first, see if the modifier exists
-      int currentLevel = original.getUpgrades().getLevel(modifier.getId());
+      int currentLevel = original.getUpgrades().getLevel(modifier.getModifierId());
       if (currentLevel == 0) {
         throw CANNOT_REMOVE.create(modifier.getDisplayName(level), living.getName());
       }
@@ -109,7 +109,7 @@ public class ModifiersCommand {
       }
 
       // remove the actual modifier
-      tool.removeModifier(modifier.getId(), removeLevel);
+      tool.removeModifier(modifier.getModifierId(), removeLevel);
 
       // ensure the tool is still valid
       Component validated = tool.tryValidate();

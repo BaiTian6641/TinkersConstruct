@@ -4,7 +4,6 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import slimeknights.tconstruct.library.events.teleport.EnderSlimeTeleportEvent;
 import slimeknights.tconstruct.library.materials.definition.MaterialId;
@@ -24,14 +23,6 @@ public class EnderSlimeEntity extends TravelersPlateSlimeEntity {
   @Override
   protected ParticleOptions getParticleType() {
     return TinkerWorld.enderSlimeParticle.get();
-  }
-
-  @Override
-  public void doEnchantDamageEffects(LivingEntity slime, Entity target) {
-    super.doEnchantDamageEffects(slime, target);
-    if (target instanceof LivingEntity) {
-      TeleportHelper.randomNearbyTeleport((LivingEntity) target, teleportPredicate);
-    }
   }
 
   @Override

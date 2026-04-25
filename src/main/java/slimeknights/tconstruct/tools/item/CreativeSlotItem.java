@@ -1,6 +1,7 @@
 package slimeknights.tconstruct.tools.item;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -12,7 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.CustomData;
 import slimeknights.mantle.command.MantleCommand;
 import slimeknights.mantle.fluid.FluidTransferHelper;
 import slimeknights.tconstruct.TConstruct;
@@ -44,8 +45,8 @@ public class CreativeSlotItem extends Item {
   /** Gets the value of the slot tag from the given stack */
   @Nullable
   public static SlotType getSlot(ItemStack stack) {
-    CompoundTag nbt = stack.getTag();
-    if (nbt != null && nbt.contains(NBT_KEY, Tag.TAG_STRING)) {
+    CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    if (nbt.contains(NBT_KEY, Tag.TAG_STRING)) {
       return SlotType.getIfPresent(nbt.getString(NBT_KEY));
     }
     return null;
@@ -53,11 +54,12 @@ public class CreativeSlotItem extends Item {
 
   /** Makes an item stack with the given slot type */
   public static ItemStack withSlot(ItemStack stack, SlotType type) {
-    stack.getOrCreateTag().putString(NBT_KEY, type.getName());
+    CompoundTag nbt = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    nbt.putString(NBT_KEY, type.getName());
+    stack.set(DataComponents.CUSTOM_DATA, CustomData.of(nbt));
     return stack;
   }
 
-  @Override
   public String getDescriptionId(ItemStack stack) {
     SlotType slot = getSlot(stack);
     String originalKey = getDescriptionId();
@@ -70,8 +72,7 @@ public class CreativeSlotItem extends Item {
     return originalKey;
   }
 
-  @Override
-  public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+  public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
     SlotType slot = getSlot(stack);
     if (slot != null) {
       tooltip.add(Component.translatable(TOOLTIP, slot.getDisplayName()).withStyle(ChatFormatting.GRAY));
@@ -101,7 +102,7 @@ public class CreativeSlotItem extends Item {
   private static boolean handleStackOn(ItemStack stack, ItemStack toolItem, Player player, int amount) {
     SlotType slotType = getSlot(stack);
     if (slotType != null && !toolItem.isEmpty() && toolItem.is(TinkerTags.Items.MODIFIABLE)) {
-      if (!player.level().isClientSide || (player.isCreative() && player.containerMenu.menuType == null)) {
+      if (!player.level().isClientSide) {
         if (canApply(player)) {
           ToolStack tool = ToolStack.from(toolItem);
           // do nothing if the tool already has 0 slots and we are removing
@@ -129,7 +130,7 @@ public class CreativeSlotItem extends Item {
           }
 
           // if no slot remain in the creative modifier, remove it
-          ModifierId creative = TinkerModifiers.creativeSlot.getId();
+          ModifierId creative = TinkerModifiers.creativeSlot.getModifierId();
           int currentLevel = tool.getModifierLevel(creative);
           if (slots.isEmpty()) {
             // if no slots exist anymore, remove the creative modifier

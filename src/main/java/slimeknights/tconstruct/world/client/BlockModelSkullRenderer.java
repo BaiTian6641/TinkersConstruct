@@ -9,9 +9,8 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.ForgeHooksClient;
+import net.neoforged.neoforge.client.ClientHooks;
 import org.joml.Quaternionf;
-import slimeknights.tconstruct.smeltery.client.util.TintedVertexBuilder;
 
 /**
  * Skull model instance for the sake of making a Slimeskull with a block item
@@ -36,7 +35,7 @@ public class BlockModelSkullRenderer extends SkullModelBase {
   }
 
   @Override
-  public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int light, int overlay, float red, float green, float blue, float alpha) {
+  public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int light, int overlay, int color) {
     poseStack.pushPose();
 
     // from CustomHeadLayer#translateToHead, with final scale adjusted
@@ -45,16 +44,13 @@ public class BlockModelSkullRenderer extends SkullModelBase {
     poseStack.scale(0.5F, -0.5F, -0.5F);
 
     // simplified from ItemRender#render
-    BakedModel model = ForgeHooksClient.handleCameraTransforms(poseStack, this.model, ItemDisplayContext.HEAD, false);
+    BakedModel model = ClientHooks.handleCameraTransforms(poseStack, this.model, ItemDisplayContext.HEAD, false);
     poseStack.translate(-0.5F, -0.5F, -0.5F);
     // we don't really use rotation, but just in case
     if (yRot != 0 || xRot != 0) {
       poseStack.mulPose((new Quaternionf()).rotationZYX(0, yRot, xRot));
     }
-    // applying tint is a pain with these, sop hope we don't need it
-    if (red != 1 || green != 1 || blue != 1 || alpha != 1) {
-      buffer = new TintedVertexBuilder(buffer, (int) (red * 255), (int) (green * 255), (int) (blue * 255), (int) (alpha * 255));
-    }
+    // applying tint is a pain with these, so keep the model rendering path simple.
     itemRenderer.renderModelLists(model, stack, light, overlay, poseStack, buffer);
 
     poseStack.popPose();

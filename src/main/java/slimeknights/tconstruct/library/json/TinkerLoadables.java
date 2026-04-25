@@ -12,8 +12,7 @@ import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
-import net.minecraftforge.common.TierSortingRegistry;
-import net.minecraftforge.common.loot.LootModifierManager;
+import slimeknights.tconstruct.compat.neoforge.common.TierSortingRegistry;
 import slimeknights.mantle.client.TooltipKey;
 import slimeknights.mantle.data.loadable.Loadable;
 import slimeknights.mantle.data.loadable.Loadables;
@@ -29,7 +28,6 @@ import slimeknights.tconstruct.library.recipe.melting.IMeltingContainer.OreRateT
 import slimeknights.tconstruct.library.tools.item.IModifiable;
 import slimeknights.tconstruct.library.tools.part.IMaterialItem;
 import slimeknights.tconstruct.library.tools.part.IToolPart;
-import slimeknights.tconstruct.library.utils.GsonLoadable;
 
 import java.util.Set;
 
@@ -77,7 +75,7 @@ public class TinkerLoadables {
 
   /* Loot tables */
   /** Loadable for a loot entry instance */
-  public static final Loadable<LootPoolEntryContainer> LOOT_ENTRY = new GsonLoadable<>(LootModifierManager.GSON_INSTANCE, LootPoolEntryContainer.class);
+  public static final Loadable<LootPoolEntryContainer> LOOT_ENTRY = Loadables.LOOT_ENTRY;
 
   /** Loadble requiring the argument to be an instance of the passed class */
   @SuppressWarnings("unchecked")  // The type works when deserializing, so it works when serializing

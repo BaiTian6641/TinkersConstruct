@@ -10,8 +10,6 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
-import net.minecraft.world.item.BrushItem;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -20,7 +18,6 @@ import net.minecraft.world.level.block.entity.BrushableBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.common.ForgeMod;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
 import slimeknights.mantle.data.loadable.record.SingletonLoader;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
@@ -66,7 +63,8 @@ public enum BrushModule implements ModifierModule, GeneralInteractionModifierHoo
 
   /** Runs an entity raytrace for brushing. See same method on {@link BrushItem} */
   private static HitResult calculateHitResult(LivingEntity living) {
-    return ProjectileUtil.getHitResultOnViewVector(living, entity -> !entity.isSpectator() && entity.isPickable(), living.getAttributeValue(ForgeMod.BLOCK_REACH.get()));
+    double reach = living instanceof Player player ? player.blockInteractionRange() : 4.5D;
+    return ProjectileUtil.getHitResultOnViewVector(living, entity -> !entity.isSpectator() && entity.isPickable(), reach);
   }
 
   @Override
@@ -92,12 +90,6 @@ public enum BrushModule implements ModifierModule, GeneralInteractionModifierHoo
   /** Plays sound and shows particles */
   private static void brushEffects(Player player, BlockHitResult blockHit, BlockState state, HumanoidArm arm, SoundEvent sound) {
     Level level = player.level();
-
-    // spawn particles
-    // shouldn't be needed to do the instance of, but might as well be safe
-    if (Items.BRUSH instanceof BrushItem brush) {
-      brush.spawnDustParticles(level, blockHit, state, player.getViewVector(0.0F), arm);
-    }
 
     // play sound
     level.playSound(player, blockHit.getBlockPos(), sound, SoundSource.BLOCKS);

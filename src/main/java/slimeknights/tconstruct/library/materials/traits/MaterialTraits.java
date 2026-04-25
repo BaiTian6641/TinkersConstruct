@@ -55,7 +55,7 @@ public class MaterialTraits {
     // write map of traits
     buffer.writeVarInt(traitsPerStats.size());
     for (Entry<MaterialStatsId,List<ModifierEntry>> entry : traitsPerStats.entrySet()) {
-      buffer.writeResourceLocation(entry.getKey());
+      buffer.writeResourceLocation(entry.getKey().getLocation());
       writeTraitList(buffer, entry.getValue());
     }
   }
@@ -142,7 +142,9 @@ public class MaterialTraits {
       Map<ResourceLocation,List<ModifierEntry>> newMap = null;
       if (!traitsPerStats.isEmpty()) {
         newMap = new HashMap<>(traitsPerStats.size());
-        newMap.putAll(traitsPerStats);
+        for (Entry<MaterialStatsId,List<ModifierEntry>> entry : traitsPerStats.entrySet()) {
+          newMap.put(entry.getKey().getLocation(), entry.getValue());
+        }
       }
       return new MaterialTraitsJson(defaultTraits, newMap);
     }

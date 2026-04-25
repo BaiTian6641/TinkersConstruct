@@ -3,8 +3,10 @@ package slimeknights.tconstruct.library.tools.capability.fluid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import slimeknights.mantle.Mantle;
 import slimeknights.mantle.data.registry.NamedComponentRegistry;
 import slimeknights.tconstruct.TConstruct;
@@ -23,8 +25,9 @@ import java.util.function.BiFunction;
 @Getter
 @RequiredArgsConstructor
 public class ToolTankHelper {
+  private static final RegistryAccess REGISTRY_ACCESS = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
   /** Helper function to parse a fluid from NBT */
-  public static final BiFunction<CompoundTag, String, FluidStack> PARSE_FLUID = (nbt, key) -> FluidStack.loadFluidStackFromNBT(nbt.getCompound(key));
+  public static final BiFunction<CompoundTag, String, FluidStack> PARSE_FLUID = (nbt, key) -> FluidStack.parseOptional(REGISTRY_ACCESS, nbt.getCompound(key));
 
   /** Format key for the stat */
   public static final String MB_FORMAT = Mantle.makeDescriptionId("gui", "fluid.millibucket");
@@ -33,7 +36,7 @@ public class ToolTankHelper {
   /** Default tank helper for setting fluids */
   public static final ToolTankHelper TANK_HELPER = new ToolTankHelper(CAPACITY_STAT, TConstruct.getResource("tank_fluid"));
   /** Module ensuring the tool has the tank */
-  public static final ModifierModule TANK_HANDLER = new ModifierTraitModule(TinkerModifiers.tankHandler.getId(), 1, true);
+  public static final ModifierModule TANK_HANDLER = new ModifierTraitModule(new slimeknights.tconstruct.library.modifiers.ModifierId(TinkerModifiers.tankHandler.getId()), 1, true);
 
   /** Loadable instance for JSON */
   public static final NamedComponentRegistry<ToolTankHelper> LOADABLE = new NamedComponentRegistry<>("Unknown Tool Tank Helper");
@@ -68,7 +71,7 @@ public class ToolTankHelper {
     if (fluid.getAmount() > capacity) {
       fluid.setAmount(capacity);
     }
-    tool.getPersistentData().put(fluidKey, fluid.writeToNBT(new CompoundTag()));
+    tool.getPersistentData().put(fluidKey, fluid.saveOptional(REGISTRY_ACCESS));
     return fluid;
   }
 }

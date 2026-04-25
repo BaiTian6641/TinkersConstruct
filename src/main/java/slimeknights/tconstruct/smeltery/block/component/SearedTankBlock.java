@@ -22,7 +22,8 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import slimeknights.mantle.fluid.FluidTransferHelper;
 import slimeknights.mantle.util.BlockEntityHelper;
 import slimeknights.tconstruct.library.recipe.FluidValues;
@@ -78,12 +79,11 @@ public class SearedTankBlock extends SearedBlock implements ITankBlock, EntityBl
   }
 
   @Deprecated
-  @Override
   public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     if (FluidTransferHelper.interactWithTank(world, pos, player, hand, hit)) {
       return InteractionResult.SUCCESS;
     }
-    return super.use(state, world, pos, player, hand, hit);
+    return InteractionResult.PASS;
   }
 
   /** Helper for setting the light level on placement */
@@ -104,9 +104,9 @@ public class SearedTankBlock extends SearedBlock implements ITankBlock, EntityBl
 
   @Override
   public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-    CompoundTag nbt = stack.getTag();
-    if (nbt != null && world.getBlockEntity(pos) instanceof TankBlockEntity tank) {
-      tank.updateTank(nbt.getCompound(NBTTags.TANK));
+    if (world.getBlockEntity(pos) instanceof TankBlockEntity tank) {
+      FluidTank placedTank = TankItem.getTank(stack, this.capacity);
+      tank.updateTank(placedTank.writeToNBT(world.registryAccess(), new CompoundTag()), world.registryAccess());
     }
     super.setPlacedBy(world, pos, state, placer, stack);
   }
@@ -123,7 +123,6 @@ public class SearedTankBlock extends SearedBlock implements ITankBlock, EntityBl
     return ITankBlockEntity.getComparatorInputOverride(worldIn, pos);
   }
 
-  @Override
   public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter world, BlockPos pos, Player player) {
     ItemStack stack = new ItemStack(this);
     BlockEntityHelper.get(TankBlockEntity.class, world, pos).ifPresent(te -> te.setTankTag(stack));

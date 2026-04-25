@@ -3,6 +3,7 @@ package slimeknights.tconstruct.library.modifiers.fluid;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.mojang.serialization.JsonOps;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -10,12 +11,12 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.common.crafting.conditions.ICondition.IContext;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.conditions.ICondition;
+import net.neoforged.neoforge.common.conditions.ICondition.IContext;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
+import net.neoforged.bus.api.EventPriority;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import slimeknights.mantle.data.loadable.field.ContextKey;
 import slimeknights.mantle.recipe.ingredient.FluidIngredient;
@@ -57,8 +58,8 @@ public class FluidEffectManager extends SimpleJsonResourceReloadListener {
 
   /** For internal use only */
   public void init() {
-    MinecraftForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, AddReloadListenerEvent.class, this::addDataPackListeners);
-    MinecraftForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, OnDatapackSyncEvent.class, e -> JsonUtils.syncPackets(e, new UpdateFluidEffectsPacket(this.fluids)));
+    NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, AddReloadListenerEvent.class, this::addDataPackListeners);
+    NeoForge.EVENT_BUS.addListener(EventPriority.NORMAL, false, OnDatapackSyncEvent.class, e -> JsonUtils.syncPackets(e, new UpdateFluidEffectsPacket(this.fluids)));
   }
 
   /** Adds the managers as datapack listeners */
@@ -84,8 +85,12 @@ public class FluidEffectManager extends SimpleJsonResourceReloadListener {
         JsonObject json = GsonHelper.convertToJsonObject(entry.getValue(), "fluid_effect");
 
         // want to parse condition without parsing effects, as the effect serializer may be missing
-        if (!CraftingHelper.processConditions(json, "conditions", conditionContext)) {
-          continue;
+        String conditionKey = json.has("neoforge:conditions") ? "neoforge:conditions" : "conditions";
+        if (json.has(conditionKey)) {
+          List<ICondition> conditions = ICondition.LIST_CODEC.parse(JsonOps.INSTANCE, json.get(conditionKey)).result().orElse(List.of());
+          if (!conditions.stream().allMatch(condition -> condition.test(conditionContext))) {
+            continue;
+          }
         }
         fluids.add(new FluidEffects.Entry(key, FluidEffects.LOADABLE.deserialize(json, contextBuilder(key).put(ContextKey.CONDITION_CONTEXT, conditionContext).build())));
       } catch (JsonSyntaxException e) {

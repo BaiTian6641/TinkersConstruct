@@ -78,7 +78,7 @@ public class ModifierEntry implements Comparable<ModifierEntry> {
 
   /** Gets the contained modifier ID, prevents resolving the lazy modifier if not needed */
   public ModifierId getId() {
-    return modifier.getId();
+    return modifier.getModifierId();
   }
 
   /** Gets the contained modifier */
@@ -177,7 +177,7 @@ public class ModifierEntry implements Comparable<ModifierEntry> {
 
   /** Checks if this entry matches the given modifier */
   public boolean matches(Modifier modifier) {
-    return matches(modifier.getId());
+    return matches(modifier.getModifierId());
   }
 
   /** Checks if the modifier is in the given tag */

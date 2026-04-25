@@ -83,6 +83,6 @@ public abstract class TravelersPlateSlimeEntity extends ArmoredSlimeEntity {
   /** Gets a random defense modifier from the tag */
   private static ModifierId randomModifier(RandomSource random, TagKey<Modifier> tag) {
     List<Modifier> options = ModifierManager.getTagValues(tag);
-    return options.get(random.nextInt(options.size())).getId();
+    return options.get(random.nextInt(options.size())).getModifierId();
   }
 }

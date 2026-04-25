@@ -17,7 +17,6 @@ public class SearedSoulGlassBlock extends SearedGlassBlock {
     return Shapes.block();
   }
 
-  @Override
   public boolean isPathfindable(BlockState pState, BlockGetter pLevel, BlockPos pPos, PathComputationType pType) {
     return false;
   }

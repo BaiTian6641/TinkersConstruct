@@ -6,14 +6,13 @@ import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.util.NonNullConsumer;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import net.minecraftforge.fluids.capability.templates.EmptyFluidHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import slimeknights.tconstruct.compat.neoforge.common.util.LazyOptional;
+import java.util.function.Consumer;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.fluids.capability.templates.EmptyFluidHandler;
 import slimeknights.mantle.block.entity.MantleBlockEntity;
 import slimeknights.mantle.util.WeakConsumerWrapper;
 import slimeknights.tconstruct.common.TinkerTags;
@@ -43,7 +42,7 @@ public class MixerAlloyTank implements IMutableAlloyTank {
   /** Cache of tanks for each of the sides */
   private final Map<Direction,LazyOptional<IFluidHandler>> inputs = new EnumMap<>(Direction.class);
   /** Map of invalidation listeners for each side */
-  private final Map<Direction,NonNullConsumer<LazyOptional<IFluidHandler>>> listeners = new EnumMap<>(Direction.class);
+  private final Map<Direction,Consumer<LazyOptional<IFluidHandler>>> listeners = new EnumMap<>(Direction.class);
   /** Map of tank index to tank on the side */
   @Nullable
   private IFluidHandler[] indexedList = null;
@@ -140,22 +139,17 @@ public class MixerAlloyTank implements IMutableAlloyTank {
           BlockPos target = parent.getBlockPos().relative(direction);
           // limit by blocks as that gives the modpack more control, say they want to allow only scorched tanks
           if (world.getBlockState(target).is(TinkerTags.Blocks.ALLOYER_TANKS)) {
-            BlockEntity te = world.getBlockEntity(target);
-            if (te != null) {
-              // if we found a tank, increment the number of tanks
-              LazyOptional<IFluidHandler> capability = te.getCapability(ForgeCapabilities.FLUID_HANDLER, direction.getOpposite());
-              if (capability.isPresent()) {
-                // attach a listener so we know when the side invalidates
-                capability.addListener(listeners.computeIfAbsent(direction, dir -> new WeakConsumerWrapper<>(this, (self, handler) -> {
-                  if (handler == self.inputs.get(dir)) {
-                    refresh(dir, false);
-                  }
-                })));
-                inputs.put(direction, capability);
-                currentTanks++;
-              } else {
-                inputs.put(direction, LazyOptional.empty());
-              }
+            IFluidHandler handler = world.getCapability(Capabilities.FluidHandler.BLOCK, target, direction.getOpposite());
+            if (handler != null) {
+              LazyOptional<IFluidHandler> capability = LazyOptional.of(() -> handler);
+              // attach a listener so we know when the side invalidates
+              capability.addListener(listeners.computeIfAbsent(direction, dir -> new WeakConsumerWrapper<>(this, (self, cap) -> {
+                if (cap == self.inputs.get(dir)) {
+                  refresh(dir, false);
+                }
+              })));
+              inputs.put(direction, capability);
+              currentTanks++;
             } else {
               inputs.put(direction, LazyOptional.empty());
             }

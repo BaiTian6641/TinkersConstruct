@@ -2,6 +2,7 @@ package slimeknights.tconstruct.tables.block.entity.inventory;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import slimeknights.tconstruct.common.TinkerTags;
 import slimeknights.tconstruct.library.materials.definition.IMaterial;
 import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
@@ -67,7 +68,10 @@ public class PartBuilderContainerWrapper implements IPartBuilderContainer {
         }
       } else {
         Level world = getWorld();
-        this.material = world.getRecipeManager().getRecipeFor(TinkerRecipeTypes.MATERIAL.get(), this, world).orElse(null);
+        this.material = world.getRecipeManager().getAllRecipesFor(TinkerRecipeTypes.MATERIAL.get()).stream()
+                             .map(RecipeHolder::value)
+                             .filter(recipe -> recipe.matches(this, world))
+                             .findFirst().orElse(null);
       }
     }
     return this.material;

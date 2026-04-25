@@ -5,15 +5,15 @@ import lombok.RequiredArgsConstructor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import slimeknights.mantle.data.loadable.field.ContextKey;
 import slimeknights.mantle.data.loadable.primitive.IntLoadable;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
 import slimeknights.mantle.recipe.ICustomOutputRecipe;
-import slimeknights.mantle.recipe.container.IEmptyContainer;
 import slimeknights.mantle.recipe.helper.FluidOutput;
 import slimeknights.mantle.recipe.ingredient.EntityIngredient;
 import slimeknights.tconstruct.library.recipe.TinkerRecipeTypes;
@@ -25,7 +25,7 @@ import java.util.Collection;
  * Recipe to melt an entity into a fluid
  */
 @RequiredArgsConstructor
-public class EntityMeltingRecipe implements ICustomOutputRecipe<IEmptyContainer> {
+public class EntityMeltingRecipe implements ICustomOutputRecipe<RecipeInput> {
   public static final RecordLoadable<EntityMeltingRecipe> LOADER = RecordLoadable.create(
     ContextKey.ID.requiredField(),
     EntityIngredient.LOADABLE.requiredField("entity", r -> r.ingredient),
@@ -85,7 +85,7 @@ public class EntityMeltingRecipe implements ICustomOutputRecipe<IEmptyContainer>
   /** @deprecated use {@link #matches(EntityType)}*/
   @Deprecated
   @Override
-  public boolean matches(IEmptyContainer inv, Level worldIn) {
+  public boolean matches(RecipeInput inv, Level worldIn) {
     return false;
   }
 }

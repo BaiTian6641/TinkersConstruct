@@ -122,7 +122,7 @@ public class TinkerStationScreen extends ToolTableScreen<TinkerStationBlockEntit
     super(container, playerInventory, title);
 
     this.tinkerInfo.yOffset = 5;
-    this.modifierInfo.yOffset = this.tinkerInfo.imageHeight + 9;
+    this.modifierInfo.yOffset = this.tinkerInfo.getPanelImageHeight() + 9;
 
     this.imageHeight = 184;
 
@@ -162,11 +162,7 @@ public class TinkerStationScreen extends ToolTableScreen<TinkerStationBlockEntit
     this.tinkerInfo.xOffset = 2;
     this.tinkerInfo.yOffset = this.centerBeam.h + this.panelDecorationL.h;
     this.modifierInfo.xOffset = this.tinkerInfo.xOffset;
-    this.modifierInfo.yOffset = this.tinkerInfo.yOffset + this.tinkerInfo.imageHeight + 4;
-
-    for (ModuleScreen<?,?> module : this.modules) {
-      module.topPos += 4;
-    }
+    this.modifierInfo.yOffset = this.tinkerInfo.yOffset + this.tinkerInfo.getPanelImageHeight() + 4;
 
     int x = (this.width - this.imageWidth) / 2;
     int y = (this.height - this.imageHeight) / 2;
@@ -218,16 +214,12 @@ public class TinkerStationScreen extends ToolTableScreen<TinkerStationBlockEntit
       Slot slot = this.getMenu().getSlot(i);
       LayoutSlot layoutSlot = currentLayout.getSlot(i);
       if (layoutSlot.isHidden()) {
-        // put the position in the still filled line
-        slot.x = STILL_FILLED_X - STILL_FILLED_SPACING * stillFilled;
-        slot.y = STILL_FILLED_Y;
+        // Slot positions are immutable in 1.21.1; keep hidden slots dormant.
         stillFilled++;
         if (slot instanceof TinkerStationSlot tinkerSlot) {
           tinkerSlot.deactivate();
         }
       } else {
-        slot.x = layoutSlot.getX();
-        slot.y = layoutSlot.getY();
         if (slot instanceof TinkerStationSlot tinkerSlot) {
           tinkerSlot.activate(layoutSlot);
         }
@@ -259,7 +251,7 @@ public class TinkerStationScreen extends ToolTableScreen<TinkerStationBlockEntit
       textField.setEditable(false);
       textField.setValue("");
       textField.visible = false;
-    } else if (!textField.isEditable()) {
+    } else if (!textField.visible) {
       textField.setEditable(true);
       textField.setValue("");
       textField.visible = true;
@@ -390,10 +382,10 @@ public class TinkerStationScreen extends ToolTableScreen<TinkerStationBlockEntit
     x += this.centerBeam.drawScaledX(graphics, x, y, this.buttonsScreen.getImageWidth());
     this.rightBeam.draw(graphics, x, y);
 
-    x = tinkerInfo.leftPos - this.leftBeam.w;
+    x = tinkerInfo.getPanelLeftPos() - this.leftBeam.w;
     this.leftBeam.draw(graphics, x, y);
     x += this.leftBeam.w;
-    x += this.centerBeam.drawScaledX(graphics, x, y, this.tinkerInfo.imageWidth);
+    x += this.centerBeam.drawScaledX(graphics, x, y, this.tinkerInfo.getPanelImageWidth());
     this.rightBeam.draw(graphics, x, y);
 
     // draw the decoration for the buttons
@@ -406,10 +398,10 @@ public class TinkerStationScreen extends ToolTableScreen<TinkerStationBlockEntit
     }
 
     // draw the decorations for the panels
-    this.panelDecorationL.draw(graphics, this.tinkerInfo.leftPos + 5, this.tinkerInfo.topPos - this.panelDecorationL.h);
-    this.panelDecorationR.draw(graphics, this.tinkerInfo.guiRight() - 5 - this.panelDecorationR.w, this.tinkerInfo.topPos - this.panelDecorationR.h);
-    this.panelDecorationL.draw(graphics, this.modifierInfo.leftPos + 5, this.modifierInfo.topPos - this.panelDecorationL.h);
-    this.panelDecorationR.draw(graphics, this.modifierInfo.guiRight() - 5 - this.panelDecorationR.w, this.modifierInfo.topPos - this.panelDecorationR.h);
+    this.panelDecorationL.draw(graphics, this.tinkerInfo.getPanelLeftPos() + 5, this.tinkerInfo.getPanelTopPos() - this.panelDecorationL.h);
+    this.panelDecorationR.draw(graphics, this.tinkerInfo.guiRight() - 5 - this.panelDecorationR.w, this.tinkerInfo.getPanelTopPos() - this.panelDecorationR.h);
+    this.panelDecorationL.draw(graphics, this.modifierInfo.getPanelLeftPos() + 5, this.modifierInfo.getPanelTopPos() - this.panelDecorationL.h);
+    this.panelDecorationR.draw(graphics, this.modifierInfo.guiRight() - 5 - this.panelDecorationR.w, this.modifierInfo.getPanelTopPos() - this.panelDecorationR.h);
 
     // render slot background icons
     for (int i = 0; i <= maxInputs; i++) {
@@ -470,16 +462,16 @@ public class TinkerStationScreen extends ToolTableScreen<TinkerStationBlockEntit
   }
 
   @Override
-  public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-    if (this.tinkerInfo.handleMouseScrolled(mouseX, mouseY, delta)) {
+  public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+    if (this.tinkerInfo.handleMouseScrolled(mouseX, mouseY, horizontal, vertical)) {
       return false;
     }
 
-    if (this.modifierInfo.handleMouseScrolled(mouseX, mouseY, delta)) {
+    if (this.modifierInfo.handleMouseScrolled(mouseX, mouseY, horizontal, vertical)) {
       return false;
     }
 
-    return super.mouseScrolled(mouseX, mouseY, delta);
+    return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
   }
 
   @Override
@@ -635,7 +627,6 @@ public class TinkerStationScreen extends ToolTableScreen<TinkerStationBlockEntit
   @Override
   public void containerTick() {
     super.containerTick();
-    this.textField.tick();
   }
 
   @Override
