@@ -92,7 +92,7 @@ import static slimeknights.tconstruct.fluids.block.MobEffectLiquidBlock.createEf
 public final class TinkerFluids extends TinkerModule {
   public TinkerFluids() {
     NeoForgeMod.enableMilkFluid();
-    NeoForge.EVENT_BUS.addListener(TinkerFluids::registerBrewingRecipes);
+    NeoForge.EVENT_BUS.addListener(this::registerBrewingRecipes);
   }
 
   /** Creative tab for general items, or those that lack another tab */
@@ -382,7 +382,7 @@ public final class TinkerFluids extends TinkerModule {
   }
 
   @SubscribeEvent
-  private static void registerBrewingRecipes(RegisterBrewingRecipesEvent event) {
+  private void registerBrewingRecipes(RegisterBrewingRecipesEvent event) {
     var builder = event.getBuilder();
     builder.addRecipe(new BottleBrewingRecipe(Ingredient.of(Items.GLASS_BOTTLE), Items.POTION, Items.SPLASH_POTION, new ItemStack(splashBottle)));
     builder.addRecipe(new BottleBrewingRecipe(Ingredient.of(TinkerTags.Items.SPLASH_BOTTLE), Items.SPLASH_POTION, Items.LINGERING_POTION, new ItemStack(lingeringBottle)));
