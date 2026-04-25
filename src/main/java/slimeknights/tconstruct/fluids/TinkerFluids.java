@@ -381,7 +381,6 @@ public final class TinkerFluids extends TinkerModule {
     });
   }
 
-  @SubscribeEvent
   private void registerBrewingRecipes(RegisterBrewingRecipesEvent event) {
     var builder = event.getBuilder();
     builder.addRecipe(new BottleBrewingRecipe(Ingredient.of(Items.GLASS_BOTTLE), Items.POTION, Items.SPLASH_POTION, new ItemStack(splashBottle)));
