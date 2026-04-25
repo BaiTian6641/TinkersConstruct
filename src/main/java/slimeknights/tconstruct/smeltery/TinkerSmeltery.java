@@ -465,7 +465,7 @@ public final class TinkerSmeltery extends TinkerModule {
   }
 
   @SubscribeEvent
-  static void registerCapabilities(RegisterCapabilitiesEvent event) {
+  void registerCapabilities(RegisterCapabilitiesEvent event) {
     // Register fluid handler capability for tank block entities
     event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, tank.get(), (be, direction) -> be.getTank());
     event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, basin.get(), (be, direction) -> be.getTank());
