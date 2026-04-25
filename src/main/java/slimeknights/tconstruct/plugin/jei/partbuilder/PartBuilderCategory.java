@@ -90,6 +90,17 @@ public class PartBuilderCategory implements IRecipeCategory<IDisplayPartBuilderR
 
   @Override
   public ResourceLocation getRegistryName(IDisplayPartBuilderRecipe recipe) {
-    return recipe.getId();
+    return recipeId(recipe);
+  }
+
+  private static ResourceLocation recipeId(Object recipe) {
+    try {
+      Object value = recipe.getClass().getMethod("getId").invoke(recipe);
+      if (value instanceof ResourceLocation id) {
+        return id;
+      }
+    } catch (ReflectiveOperationException ignored) {
+    }
+    return TConstruct.getResource("jei/part_builder/" + Integer.toHexString(System.identityHashCode(recipe)));
   }
 }

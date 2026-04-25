@@ -89,10 +89,7 @@ println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty '
 sourceSets {
     main {
         java {
-            // JEI remains source-excluded for now. Re-enabling it on NeoForge 1.21.1 exposes
-            // hard API breaks beyond deprecation cleanup, including crafting extension API drift,
-            // RecipeManager access changes, Holder/tag API updates, and registry iteration changes.
-            exclude 'slimeknights/tconstruct/plugin/jei/**'
+            // JEI sources enabled for active porting on NeoForge 1.21.1.
         }
         resources {
             srcDirs "src/generated/resources"

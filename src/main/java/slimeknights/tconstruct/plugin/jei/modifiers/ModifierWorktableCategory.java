@@ -96,6 +96,17 @@ public class ModifierWorktableCategory implements IRecipeCategory<IModifierWorkt
 
   @Override
   public ResourceLocation getRegistryName(IModifierWorktableRecipe recipe) {
-    return recipe.getId();
+    return recipeId(recipe, "modifier_worktable");
+  }
+
+  private static ResourceLocation recipeId(Object recipe, String prefix) {
+    try {
+      Object value = recipe.getClass().getMethod("getId").invoke(recipe);
+      if (value instanceof ResourceLocation id) {
+        return id;
+      }
+    } catch (ReflectiveOperationException ignored) {
+    }
+    return TConstruct.getResource("jei/" + prefix + "/" + Integer.toHexString(System.identityHashCode(recipe)));
   }
 }

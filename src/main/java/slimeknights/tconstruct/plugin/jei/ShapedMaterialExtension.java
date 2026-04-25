@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import slimeknights.mantle.client.SafeClientAccess;
+import slimeknights.tconstruct.TConstruct;
 import slimeknights.tconstruct.library.recipe.ingredient.MaterialValueIngredient;
 import slimeknights.tconstruct.library.recipe.material.MaterialRecipeCache;
 import slimeknights.tconstruct.library.recipe.material.ShapedMaterialRecipe;
@@ -58,7 +59,14 @@ public class ShapedMaterialExtension implements ICraftingCategoryExtension {
 
   @Override
   public ResourceLocation getRegistryName() {
-    return recipe.getId();
+    try {
+      Object value = recipe.getClass().getMethod("getId").invoke(recipe);
+      if (value instanceof ResourceLocation id) {
+        return id;
+      }
+    } catch (ReflectiveOperationException ignored) {
+    }
+    return TConstruct.getResource("jei/shaped_material/" + Integer.toHexString(System.identityHashCode(recipe)));
   }
 
   @Override
