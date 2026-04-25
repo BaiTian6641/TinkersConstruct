@@ -102,6 +102,9 @@ public class TConstruct {
     instance = this;
     modEventBus = bus;
 
+    // must run before module constructors that rely on TinkerModule.MOD_BUS
+    TinkerModule.initRegisters(bus);
+
     Config.init(container);
     TinkerItemDisplays.init();
     MaterialRegistry.init();
@@ -128,8 +131,7 @@ public class TConstruct {
     bus.register(new TinkerSmeltery());
     bus.register(new TinkerFluids());
 
-    // init deferred registers
-    TinkerModule.initRegisters(bus);
+    // init networking and tags
     TinkerNetwork.setup();
     TinkerTags.init();
     // init client logic
