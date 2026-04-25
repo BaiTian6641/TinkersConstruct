@@ -110,7 +110,9 @@ public class TConstruct {
     // base
     bus.register(new TinkerCommons());
     bus.register(new TinkerMaterials());
-    bus.register(new TinkerEffects());
+    // NeoForge 1.21.1 rejects EventBus#register(object) if no @SubscribeEvent methods exist.
+    // TinkerEffects only needs constructor side effects (brewing listener + potion register), so instantiate directly.
+    new TinkerEffects();
     bus.register(new TinkerGadgets());
     bus.register(new TinkerAttributes());
     // world
@@ -119,7 +121,8 @@ public class TConstruct {
     // tools
     bus.register(new TinkerTables());
     bus.register(new TinkerModifiers());
-    bus.register(new TinkerToolParts());
+    // TinkerToolParts has no @SubscribeEvent handlers; force class init without event bus registration.
+    new TinkerToolParts();
     bus.register(new TinkerTools());
     // smeltery
     bus.register(new TinkerSmeltery());
