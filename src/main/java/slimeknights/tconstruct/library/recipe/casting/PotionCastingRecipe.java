@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import slimeknights.tconstruct.compat.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -44,7 +45,8 @@ public class PotionCastingRecipe implements ICastingRecipe, IMultiRecipe<Display
     PotionCastingRecipe::new);
 
   @Getter
-  protected final TypeAwareRecipeSerializer<?> serializer;
+  protected final RecipeSerializer<?> serializer;
+  protected final RecipeType<?> type;
   @Getter
   protected final ResourceLocation id;
   @Getter
@@ -59,7 +61,8 @@ public class PotionCastingRecipe implements ICastingRecipe, IMultiRecipe<Display
   protected final int coolingTime;
 
   public PotionCastingRecipe(TypeAwareRecipeSerializer<?> serializer, ResourceLocation id, String group, Ingredient bottle, FluidIngredient fluid, Item result, int coolingTime) {
-    this.serializer = serializer;
+    this.serializer = (RecipeSerializer<?>) serializer;
+    this.type = serializer.getType();
     this.id = id;
     this.group = group;
     this.bottle = bottle;
@@ -71,7 +74,7 @@ public class PotionCastingRecipe implements ICastingRecipe, IMultiRecipe<Display
 
   @Override
   public RecipeType<?> getType() {
-    return serializer.getType();
+    return type;
   }
 
   @Override

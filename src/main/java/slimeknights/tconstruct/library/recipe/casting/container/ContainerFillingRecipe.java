@@ -1,7 +1,6 @@
 package slimeknights.tconstruct.library.recipe.casting.container;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -10,6 +9,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
@@ -34,7 +34,6 @@ import java.util.List;
 /**
  * Casting recipe that takes an arbitrary fluid for a given amount and fills a container
  */
-@RequiredArgsConstructor
 public class ContainerFillingRecipe implements ICastingRecipe, IMultiRecipe<DisplayCastingRecipe> {
   public static final RecordLoadable<ContainerFillingRecipe> LOADER = RecordLoadable.create(
     LoadableRecipeSerializer.TYPED_SERIALIZER.requiredField(), ContextKey.ID.requiredField(), LoadableRecipeSerializer.RECIPE_GROUP,
@@ -43,7 +42,9 @@ public class ContainerFillingRecipe implements ICastingRecipe, IMultiRecipe<Disp
     ContainerFillingRecipe::new);
 
   @Getter
-  private final TypeAwareRecipeSerializer<?> serializer;
+  private final RecipeType<?> type;
+  @Getter
+  private final RecipeSerializer<?> serializer;
   @Getter
   private final ResourceLocation id;
   @Getter
@@ -51,9 +52,18 @@ public class ContainerFillingRecipe implements ICastingRecipe, IMultiRecipe<Disp
   private final int fluidAmount;
   private final Item container;
 
+  public ContainerFillingRecipe(TypeAwareRecipeSerializer<?> serializer, ResourceLocation id, String group, int fluidAmount, Item container) {
+    this.type = serializer.getType();
+    this.serializer = (RecipeSerializer<?>) serializer;
+    this.id = id;
+    this.group = group;
+    this.fluidAmount = fluidAmount;
+    this.container = container;
+  }
+
   @Override
   public RecipeType<?> getType() {
-    return serializer.getType();
+    return type;
   }
 
   @Override

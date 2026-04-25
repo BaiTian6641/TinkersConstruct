@@ -1,8 +1,12 @@
 package slimeknights.tconstruct.common.network;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
@@ -10,8 +14,14 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
 import slimeknights.tconstruct.compat.neoforge.network.NetworkDirection;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.IPayloadHandler;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import slimeknights.mantle.network.NetworkWrapper;
+import slimeknights.mantle.network.packet.ISimplePacket;
 import slimeknights.tconstruct.TConstruct;
+import slimeknights.tconstruct.common.TinkerModule;
 import slimeknights.tconstruct.library.materials.definition.UpdateMaterialsPacket;
 import slimeknights.tconstruct.library.materials.stats.UpdateMaterialStatsPacket;
 import slimeknights.tconstruct.library.materials.traits.UpdateMaterialTraitsPacket;
@@ -41,6 +51,9 @@ import slimeknights.tconstruct.tools.network.TinkerControlPacket;
 import slimeknights.tconstruct.tools.network.ToolContainerFluidUpdatePacket;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Base network class for all tinkers logic
@@ -49,6 +62,7 @@ import javax.annotation.Nullable;
  */
 public class TinkerNetwork extends NetworkWrapper {
   private static TinkerNetwork instance = null;
+  private final List<PendingPacketRegistration<?>> pendingPackets = new ArrayList<>();
 
   /*
    * Network versions:
@@ -76,6 +90,7 @@ public class TinkerNetwork extends NetworkWrapper {
       return;
     }
     instance = new TinkerNetwork();
+    TinkerModule.MOD_BUS.addListener(instance::registerPayloadHandlers);
 
     // shared
     instance.registerPacket(InventorySlotSyncPacket.class, InventorySlotSyncPacket::new, NetworkDirection.PLAY_TO_CLIENT);
@@ -119,6 +134,42 @@ public class TinkerNetwork extends NetworkWrapper {
     instance.registerPacket(SmelteryFluidClickedPacket.class, SmelteryFluidClickedPacket::new, NetworkDirection.PLAY_TO_SERVER);
     instance.registerPacket(StructureErrorPositionPacket.class, StructureErrorPositionPacket::new, NetworkDirection.PLAY_TO_CLIENT);
   }
+
+  private void registerPayloadHandlers(RegisterPayloadHandlersEvent event) {
+    PayloadRegistrar registrar = event.registrar("3");
+    for (PendingPacketRegistration<?> packet : pendingPackets) {
+      registerPacket(registrar, packet);
+    }
+  }
+
+  private static <MSG extends ISimplePacket> void registerPacket(PayloadRegistrar registrar, PendingPacketRegistration<MSG> packet) {
+    if (packet.direction() == NetworkDirection.PLAY_TO_SERVER) {
+      registrar.playToServer(packet.type(), packet.codec(), packet.handler());
+    } else {
+      registrar.playToClient(packet.type(), packet.codec(), packet.handler());
+    }
+  }
+
+  private <MSG extends ISimplePacket> void registerPacket(Class<MSG> packetClass, Function<FriendlyByteBuf,MSG> decoder, @Nullable NetworkDirection direction) {
+    pendingPackets.add(new PendingPacketRegistration<>(
+      payloadType(packetClass),
+      StreamCodec.of((buffer, packet) -> packet.encode(buffer), buffer -> decoder.apply(buffer)),
+      (packet, context) -> packet.handle(context),
+      direction == null ? NetworkDirection.PLAY_TO_CLIENT : direction
+    ));
+  }
+
+  private static <MSG extends ISimplePacket> CustomPacketPayload.Type<MSG> payloadType(Class<MSG> packetClass) {
+    String className = packetClass.getName().toLowerCase();
+    String namespace = className.contains(".tconstruct.") ? "tconstruct" : "mantle";
+    String path = className.replace('.', '/');
+    return new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(namespace, path));
+  }
+
+  private record PendingPacketRegistration<MSG extends ISimplePacket>(CustomPacketPayload.Type<MSG> type,
+                                                                      StreamCodec<RegistryFriendlyByteBuf,MSG> codec,
+                                                                      IPayloadHandler<MSG> handler,
+                                                                      NetworkDirection direction) {}
 
   /**
    * Sends a vanilla packet to the given player

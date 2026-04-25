@@ -5,6 +5,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -33,13 +34,13 @@ public class ItemCastingRecipe extends AbstractCastingRecipe implements IDisplay
     LoadableRecipeSerializer.RECIPE_GROUP, CAST_FIELD, FLUID_FIELD, RESULT_FIELD, COOLING_TIME_FIELD, CAST_CONSUMED_FIELD, SWITCH_SLOTS_FIELD,
     ItemCastingRecipe::new);
 
-  private final TypeAwareRecipeSerializer<?> serializer;
+  private final RecipeSerializer<?> serializer;
   protected final FluidIngredient fluid;
   protected final ItemOutput result;
   protected final int coolingTime;
   public ItemCastingRecipe(TypeAwareRecipeSerializer<?> serializer, ResourceLocation id, String group, Ingredient cast, FluidIngredient fluid, ItemOutput result, int coolingTime, boolean consumed, boolean switchSlots) {
     super(serializer.getType(), id, group, cast, consumed, switchSlots);
-    this.serializer = serializer;
+    this.serializer = (RecipeSerializer<?>) serializer;
     this.fluid = fluid;
     this.result = result;
     this.coolingTime = coolingTime;
